@@ -3,13 +3,15 @@
 # Board creation
 start_stones = 4
 board = [start_stones]*6 + [0] + [start_stones]*6 + [0]
-global turn
-turn = 0
+player = 0
 
 def take_turn(pit:int):
     '''Takes a turn in the game Mancala. Expects an integer for the chosen pit to pick stones out of.'''
-    # Calculates what the chosen pit is on the board based on the turn.
-    board_pit = turn*7 + pit
+    global player
+    print("Player: {}".format(player))
+
+    # Calculates what the chosen pit is on the board based on the player.
+    board_pit = player*7 + pit
 
     # Determines if the pit is valid (on correct side of the board and not empty).
     if pit in range(7) and board[board_pit] != 0:
@@ -27,21 +29,21 @@ def take_turn(pit:int):
         # print("The last pit was {}".format(last_pit))
 
         # Determines if the last stone landed in the Mancala (collection pit) which means an extra turn.
-        if last_pit == 6 + turn*7:
+        if last_pit == 6 + player*7:
             print("-- The last stone landed in the mancala, you get an extra turn!")
 
         else:
             # Determines if the last stone landed in an empty pit on your own side which means a capture.
-            if ( last_pit >= turn*7 and last_pit < 6 + turn*7 ) and  ( board[last_pit+7 % 14] == 0 ):
+            if ( last_pit >= player*7 and last_pit < 6 + player*7 ) and  ( board[last_pit+7 % 14] == 0 ):
                 print("-- The last stone landed in your own pit opposing an empty one, capture!")
                 #TODO Capture
 
             # Normal turn where no special rules were invoked
             else:
-                print("-- Nothing spectacular.")
+                print("-- Nothing spectacular. Just a regular turn.")
             
-            # Switches turn
-            #turn = (turn + 1) % 2
+            # Switches player
+            player = (player + 1) % 2
 
             #TODO Check if no stones left on one side of the board
             #TODO End game and tally points
@@ -63,11 +65,11 @@ def print_board(board:list):
 
 
 # DEBUG
-print_board(board)
+# print_board(board)
 
-turn = 0
+# player 1
 take_turn(2)
 take_turn(0)
 
-turn = 1
+# player 2
 take_turn(3)
