@@ -1,77 +1,101 @@
 import mancala as mncl
 import neuralnetwork as nn
+import poparchives as popa
 import numpy as np
+
+# ---------------------------------------------------------------------------
+
+# PARAMETERS:
 
 # Layer sizes for the networks: 14 input neurons and 6 output neurons are mandatory for mancala, rest can be modified. 
 # Hidden layer number and sizes were chosen based on intuition.
 layer_sizes = (14, 10, 10, 6)
 
-# Creates initial population of agents.
-population_size = 100
-population = [nn.NeuralNetwork(layer_sizes) for agent in range(100)]
+# Population size should be an even number.
+population_size = 200
 
-# Matches up all the agents
-matchups = [(a,b) for a in population for b in population]
+# Mutation modifier (Larger number means smaller mutations).
+mutation_mod = 10
 
-for players in matchups:
-    # Creates the mancala game object for each matchup.
-    game = mncl.Mancala()
+# Start and end points for the evolution.
+# Set start_gen to largest reached generation before break to automatically load from where you left off.
+start_gen = 42
+end_gen = 100
 
-    # Agents take turns chosing stones.
-    while game.is_active:
-        # Takes the game board and changes into a column vector for the agents to process.
-        board_input = np.array(game.board).reshape((len(game.board), 1))
+# ---------------------------------------------------------------------------
 
-        # Calculates output of the neural network for the given boardstate input.
-        output = players[game.player].choose(board_input)
+# EVOLUTION LOOP
+for gen in range(start_gen, end_gen):
 
-        # Reshapes the output into a list of prioritised choices.
-        choices = np.argsort(output.reshape((1, 6)))
+    # Loading population data from file.
+    file = "gen" + str(gen) + ".pkl"
+    try:
+        popa.load(file)
+    except:
+        # Creates a new population if it cannot load from file.
+        population = [nn.NeuralNetwork(layer_sizes) for agent in range(population_size)]
+    else:
+        # Loads population from an existing file.
+        population = popa.load(file)
 
-        # Test each choice in turn until it finds a valid move.
-        n = 0
-        while not game.valid_choice(choices[0][n]):
-            n += 1
+    # Resets agent score so old agents don't get an advantage.
+    for agent in population:
+        agent.score = 0
 
-        # Agent takes the first valid move from prioritised choice list.
-        game.take_turn(choices[0][n])
+    # Matches up all the agents.
+    matchups = [(a,b) for a in population for b in population]
 
-    # Adds the difference in score to agents cumulative score.
-    players[0].score += game.result[0] - game.result[1]
-    players[1].score += game.result[1] - game.result[0]
+    for players in matchups:
+        # Creates the mancala game object for each matchup.
+        game = mncl.Mancala()
 
-    # Adds a win to the appropriate agent.
-    if game.result[0] > game.result[1]:
-        players[0].wins += 1
-    elif game.result[0] < game.result[1]:
-        players[1].wins += 1
+        # Agents take turns chosing stones.
+        while game.is_active:
+            # Takes the game board and changes into a column vector for the agents to process.
+            board_input = np.array(game.board).reshape((len(game.board), 1))
 
-# Prints scores of each agent after first matchups
-for agent,i in zip(population,range(population_size)):
-    print("Agent number {} with score {} and wins {}".format(i, agent.score, agent.wins))
+            # Calculates output of the neural network for the given boardstate input.
+            output = players[game.player].choose(board_input)
 
-# DEBUG
-'''
-# A sample game with two randomly generated (dumb) agents.
-agent0 = nn.NeuralNetwork(layer_sizes)
-agent1 = nn.NeuralNetwork(layer_sizes)
+            # Reshapes the output into a list of prioritised choices.
+            choices = np.argsort(output.reshape((1, 6)))
 
-while game.is_active:
-    board_input = np.array(game.board).reshape((len(game.board), 1))
+            # Test each choice in turn until it finds a valid move.
+            n = 0
+            while not game.valid_choice(choices[0][n]):
+                n += 1
 
-    if game.player == 0:
-        output = agent0.choose(board_input)
-        choices = np.argsort(output.reshape((1, 6)))
-        n = 0
-        while not game.valid_choice(choices[0][n]):
-            n += 1
-        game.take_turn(choices[0][n])
+            # Agent takes the first valid move from prioritised choice list.
+            game.take_turn(choices[0][n])
 
-    elif game.player == 1:
-        output = agent1.choose(board_input)
-        choices = np.argsort(output.reshape((1, 6)))
-        n = 0
-        while not game.valid_choice(choices[0][n]):
-            n += 1
-        game.take_turn(choices[0][n])
-'''
+        # Adds the difference in score to agents cumulative score.
+        players[0].score += game.result[0] - game.result[1]
+        players[1].score += game.result[1] - game.result[0]
+
+        # Adds a win to the appropriate agent.
+        if game.result[0] > game.result[1]:
+            players[0].wins += 1
+        elif game.result[0] < game.result[1]:
+            players[1].wins += 1
+
+    # Sorting the population by score.
+    population.sort(key=lambda x: x.score, reverse=True)
+
+    # Doing a Thanos and snapping away half of the population.
+    half = int(population_size / 2)
+    population = population[:half]
+
+    # Creating clones from survivors.
+    clones = []
+    for agent in population:
+        clones.append(agent.mutate(mutation_mod))
+
+    # Adding clones to population.
+    population = population + clones
+
+    # Records the new generation.
+    file = "gen" + str(gen + 1) + ".pkl"
+    popa.write(population,file)
+    
+
+print("Done!")

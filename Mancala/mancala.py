@@ -1,4 +1,5 @@
 class Mancala:
+    
     def __init__(self):
         '''Game creation.'''
         start_stones = 4

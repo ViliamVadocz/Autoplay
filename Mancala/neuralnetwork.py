@@ -23,3 +23,23 @@ class NeuralNetwork:
     def activation(x):
         '''The activation function, logistic sigmoid.'''
         return 1/(1+np.exp(-x))
+
+    def mutate(self, mut_mod):
+        '''Creates a clone of the neural network and mutates values randomly.'''
+        # Creates exact clone of itself, resets wins and bumps up the generation.
+        clone = self
+        clone.wins = 0
+        clone.gen += 1
+
+        # Mutates the clone.
+        weight_mutations = [np.random.standard_normal(w.shape)/(w.shape[1]*mut_mod) for w in clone.weights]
+        bias_mutations = [np.random.standard_normal(b.shape)/(b.shape[1]*mut_mod) for b in clone.biases]
+
+        for i in range(len(clone.weights)):
+            clone.weights[i] += weight_mutations[i]
+        
+        for i in range(len(clone.biases)):
+            clone.biases[i] += bias_mutations[i]
+
+        # Returns mutated clone.
+        return clone
