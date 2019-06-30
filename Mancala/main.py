@@ -19,7 +19,7 @@ mutation_mod = 10
 
 # Start and end points for the evolution.
 # Set start_gen to largest reached generation before break to automatically load from where you left off.
-start_gen = 42
+start_gen = 43
 end_gen = 100
 
 # ---------------------------------------------------------------------------
