@@ -12,31 +12,33 @@ import numpy as np
 layer_sizes = (14, 10, 10, 6)
 
 # Population size should be an even number.
-population_size = 200
+population_size = 10
 
 # Mutation modifier (Larger number means smaller mutations).
-mutation_mod = 10
+mutation_mod = 5
 
 # Start and end points for the evolution.
 # Set start_gen to largest reached generation before break to automatically load from where you left off.
-start_gen = 43
-end_gen = 100
+start_gen = 0
+end_gen = 5
+
+# ---------------------------------------------------------------------------
+
+# Loading population data from file or creating a new population.
+file = "gen" + str(start_gen) + ".pkl"
+try:
+    popa.load(file)
+except:
+    # Creates a new population if it cannot load from file.
+    population = [nn.NeuralNetwork(layer_sizes) for agent in range(population_size)]
+else:
+    # Loads population from an existing file.
+    population = popa.load(file)
 
 # ---------------------------------------------------------------------------
 
 # EVOLUTION LOOP
 for gen in range(start_gen, end_gen):
-
-    # Loading population data from file.
-    file = "gen" + str(gen) + ".pkl"
-    try:
-        popa.load(file)
-    except:
-        # Creates a new population if it cannot load from file.
-        population = [nn.NeuralNetwork(layer_sizes) for agent in range(population_size)]
-    else:
-        # Loads population from an existing file.
-        population = popa.load(file)
 
     # Resets agent score so old agents don't get an advantage.
     for agent in population:
@@ -81,7 +83,7 @@ for gen in range(start_gen, end_gen):
     # Sorting the population by score.
     population.sort(key=lambda x: x.score, reverse=True)
 
-    # Doing a Thanos and snapping away half of the population.
+    # Doing like Thanos and snapping away half of the population.
     half = int(population_size / 2)
     population = population[:half]
 
@@ -91,7 +93,7 @@ for gen in range(start_gen, end_gen):
         clones.append(agent.mutate(mutation_mod))
 
     # Adding clones to population.
-    population = population + clones
+    population = [*population, *clones]
 
     # Records the new generation.
     file = "gen" + str(gen + 1) + ".pkl"
