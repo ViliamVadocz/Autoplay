@@ -71,6 +71,7 @@ class Human_Friendly_Mancala:
                 pass
 
             # Switches player
+            print("End of player {}'s turn".format(self.player))
             self.player = (self.player + 1) % 2
 
         self.print_board(self.board)
@@ -90,11 +91,11 @@ class Human_Friendly_Mancala:
 
             # Announces winner
             if self.board[6] > self.board[13]:
-                print("* Player 1 wins! Score was [{} : {}]".format(
+                print("* Player 0 wins! Score was [{} : {}]".format(
                     self.board[6], self.board[13]))
 
             elif self.board[6] < self.board[13]:
-                print("* Player 2 wins! Score was [{} : {}]".format(
+                print("* Player 1 wins! Score was [{} : {}]".format(
                     self.board[6], self.board[13]))
 
             else:
@@ -115,11 +116,12 @@ class Human_Friendly_Mancala:
         print()
 
 # Load in generation to play against.
-population = popa.load("gen43.pkl")
+population = popa.load("gen129.pkl")
 
 # Pick top-scoring agent.
 agent = population[0]
-print("Playing against agent from generation {} with {} total wins.".format(agent.gen, agent.wins))
+print("#"*50)
+print("Playing against the top agent born in generation {} with {} total wins to its name.".format(agent.gen, agent.wins))
 
 # Create mancala game object.
 game = Human_Friendly_Mancala()
@@ -166,5 +168,6 @@ while game.is_active:
             n += 1
 
         # Agent takes the first valid move from prioritised choice list.
+        print(choices[0][n])
         game.take_turn(choices[0][n])
 

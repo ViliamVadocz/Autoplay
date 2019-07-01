@@ -12,15 +12,15 @@ import numpy as np
 layer_sizes = (14, 10, 10, 6)
 
 # Population size should be an even number.
-population_size = 10
+population_size = 250
 
 # Mutation modifier (Larger number means smaller mutations).
-mutation_mod = 5
+mutation_mod = 1
 
 # Start and end points for the evolution.
 # Set start_gen to largest reached generation before break to automatically load from where you left off.
-start_gen = 0
-end_gen = 5
+start_gen = 128
+end_gen = 1000
 
 # ---------------------------------------------------------------------------
 
