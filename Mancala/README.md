@@ -1,4 +1,5 @@
-Here I tried using simulated evolution to generate an agent to play the game mancala.
+# Mancala
+Simulating evolution to generate an agent to play the game mancala.
 
 
 The current evolution process:
