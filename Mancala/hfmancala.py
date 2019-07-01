@@ -71,7 +71,7 @@ class Human_Friendly_Mancala:
                 pass
 
             # Switches player
-            print("End of player {}'s turn".format(self.player))
+            print("##### End of player {}'s turn ######".format(self.player))
             self.player = (self.player + 1) % 2
 
         self.print_board(self.board)
@@ -116,12 +116,12 @@ class Human_Friendly_Mancala:
         print()
 
 # Load in generation to play against.
-population = popa.load("gen129.pkl")
+population = popa.load("gen241.pkl")
 
 # Pick top-scoring agent.
 agent = population[0]
 print("#"*50)
-print("Playing against the top agent born in generation {} with {} total wins to its name.".format(agent.gen, agent.wins))
+print("Playing against the top agent born in generation {} with {} total wins.".format(agent.gen, agent.wins))
 
 # Create mancala game object.
 game = Human_Friendly_Mancala()
