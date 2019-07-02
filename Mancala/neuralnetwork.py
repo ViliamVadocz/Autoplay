@@ -8,7 +8,7 @@ class NeuralNetwork:
         # Neurons and connections
         weight_shapes = [(a, b) for a, b in zip(self.layer_sizes[1:], self.layer_sizes[:-1])]
         self.weights = [np.random.standard_normal(s)/(s[1]**0.5) for s in weight_shapes]
-        self.biases = [np.zeros((s, 1)) for s in self.layer_sizes[1:]]
+        self.biases = [np.random.standard_normal((s, 1))/(s**0.5) for s in self.layer_sizes[1:]]
 
         # Score
         self.gen = 0
@@ -26,7 +26,7 @@ class NeuralNetwork:
         '''The activation function, logistic sigmoid.'''
         return 1/(1+np.exp(-x))
 
-    def mutate(self, mut_mod):
+    def mutate(self, mutation_mod):
         '''Creates a clone of the neural network and mutates values randomly.'''
         # Creates a clone of itself and bumps up the generation.
         clone = NeuralNetwork(self.layer_sizes)
@@ -36,13 +36,13 @@ class NeuralNetwork:
 
         # Generates mutations for the clone.
         weight_shapes = [(a, b) for a, b in zip(self.layer_sizes[1:], self.layer_sizes[:-1])]
-        weight_mutations = [np.random.standard_normal(s)/(s[1]*mut_mod) for s in weight_shapes]
-        bias_mutations = [np.random.standard_normal((s, 1))/(s*mut_mod) for s in self.layer_sizes[1:]]
+        weight_mutations = [mutation_mod*np.random.standard_normal(s)/(s[1]**0.5) for s in weight_shapes]
+        bias_mutations = [mutation_mod*np.random.standard_normal((s, 1))/(s**0.5) for s in self.layer_sizes[1:]]
 
         # Mutates the clone
         for i in range(len(clone.weights)):
             clone.weights[i] += weight_mutations[i]
-        
+
         for i in range(len(clone.biases)):
             clone.biases[i] += bias_mutations[i]
 

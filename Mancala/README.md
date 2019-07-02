@@ -48,10 +48,11 @@ The actual mancala game was coded by me as well, the rules are:
   - 4 stones in each starting pit.
   - On your turn, pick a pit with stones on your side of the board.
   - Take all the stones out and go around the board anti-clockwise, dropping one stone in each pit you pass over.
+    - (Skip opponent's mancala.)
   - Some special rules apply depending on where the last stone was dropped:
     - If it landed in your mancala, you get an extra turn.
     - If it landed in an empty pit on your side opposing a non-empty pit, you capture.
-      - (capture = take all the stones in the two pits and place them in your mancala)
+      - (capture = take all the stones in the two pits and place them in your mancala.)
   - When either side of the board has no more stones, the game ends.
   - All the remaining stones are placed in the mancala on the same side.
   - The winner is the one who has more stones in their mancala at the end of the game.

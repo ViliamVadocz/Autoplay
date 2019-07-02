@@ -26,15 +26,22 @@ class Mancala:
         board_pit = self.player*7 + pit
 
         # Picks up stones from the pit.
-        in_hand = self.board[board_pit]
+        stones_in_hand = self.board[board_pit]
         self.board[board_pit] = 0
 
         # Moves stones around the board (anti-clockwise).
-        for stone in range(in_hand):
-            self.board[(board_pit + 1 + stone) % 14] += 1
+        steps = 0
+        while stones_in_hand > 0:
+            # Increments steps.
+            steps += 1
+            # Checks that the the pit is not the opponent's mancala (which is skipped when dropping stones).
+            if (board_pit + steps) % 14 != (13 + self.player*7) % 14:
+                # Drops a stone into the pit.
+                self.board[(board_pit + steps) % 14] += 1
+                stones_in_hand -= 1
 
         # Last pit is found (needed for special rules).
-        last_pit = (board_pit + in_hand) % 14
+        last_pit = (board_pit + steps) % 14
 
         # Determines if the last stone has not landed in the Mancala (collection pit) which would mean an extra turn.
         if not last_pit == 6 + self.player*7:

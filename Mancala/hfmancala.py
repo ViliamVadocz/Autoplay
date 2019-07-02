@@ -42,15 +42,22 @@ class Human_Friendly_Mancala:
         print("* Player {} picked pit [{}] (board pit [{}]) with [{}] stones.".format(self.player, pit, board_pit, self.board[board_pit]))
 
         # Picks up stones from the pit.
-        in_hand = self.board[board_pit]
+        stones_in_hand = self.board[board_pit]
         self.board[board_pit] = 0
 
         # Moves stones around the board (anti-clockwise).
-        for stone in range(in_hand):
-            self.board[(board_pit + 1 + stone) % 14] += 1
+        steps = 0
+        while stones_in_hand > 0:
+            # Increments steps.
+            steps += 1
+            # Checks that the the pit is not the opponent's mancala (which is skipped when dropping stones).
+            if (board_pit + steps) % 14 != (13 + self.player*7) % 14:
+                # Drops a stone into the pit.
+                self.board[(board_pit + steps) % 14] += 1
+                stones_in_hand -= 1
 
         # Last pit is found (needed for special rules).
-        last_pit = (board_pit + in_hand) % 14
+        last_pit = (board_pit + steps) % 14
         ### print("* The last pit was [{}]".format(last_pit))
 
         # Determines if the last stone landed in the Mancala (collection pit) which means an extra turn.
@@ -115,8 +122,17 @@ class Human_Friendly_Mancala:
         print("-"*25)
         print()
 
+# ---------------------------------------------------------------------------
+
+# SETUP:
+
 # Load in generation to play against.
-population = popa.load("gen241.pkl")
+population = popa.load("gen271.pkl")
+
+# 0 or 1 depending on whether human goes first or second. (0 means first.)
+human = 0
+
+# ---------------------------------------------------------------------------
 
 # Pick top-scoring agent.
 agent = population[0]
@@ -125,9 +141,6 @@ print("Playing against the top agent born in generation {} with {} total wins.".
 
 # Create mancala game object.
 game = Human_Friendly_Mancala()
-
-# 0 or 1 depending on whether human goes first or second. (0 means first.)
-human = 0
 
 # Run the game.
 while game.is_active:
