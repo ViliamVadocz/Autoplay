@@ -14,28 +14,23 @@ layer_sizes: tuple = (14, 10, 10, 6)
 # Population size determines number of agents in each generation.
 # If you are changing the population size, make sure to delete the archived populations or they will load instead and everything will break.
 # TODO Fix above mentioned problem
-population_size: int = 1000
-
-if population_size < 200:
-    print("Population size is too small. Aborting...")
-    exit()
+population_size: int = 10
+assert population_size >= 10, "Population size is too small."
 
 # Mutation modifier (Larger number means larger mutations).
-mutation_mod = 10
+mutation_mod = 0.5
 
 # Percentage of populaiton to keep in each generation.
 # Has to be more than zero otherwise the population will never evolve.
 # Has to be less than one otherwise all agents are removed and there is no way to repopulate.
-thanos_mod: float = 0.5 # Currently has to be 0.5 because new cloning doesn't seem to work properly.
+thanos_mod: float = 0.8
 
-if not 0 < thanos_mod < 1.0:
-    print("Thanos modifier is either too large or too small. Aborting...")
-    exit()
+assert 0 < thanos_mod < 1.0, "Thanos modifier is either too large or too small."
 
 # Start and end points for the evolution.
 # Set start_gen to largest reached generation before break to automatically load from where you left off.
 start_gen = 0
-end_gen = 10
+end_gen = 100
 
 # ---------------------------------------------------------------------------
 
@@ -47,7 +42,7 @@ try:
 except:
     # Creates a new population if it cannot load from file.
     print("Creating a brand new population. Let there be light!")
-    population = [nn.NeuralNetwork(layer_sizes) for agent in range(population_size)]
+    population = [nn.NeuralNetwork(layer_sizes, 0) for agent in range(population_size)]
     popa.write(population, filename)
 
 else:
@@ -93,7 +88,6 @@ for gen in range(start_gen, end_gen):
         # Adds the difference in score to agents cumulative score.
         players[0].score += game.result[0] - game.result[1]
         players[1].score += game.result[1] - game.result[0]
-        print(game.result)
 
         # Adds a win to the appropriate agent.
         if game.result[0] > game.result[1]:
@@ -109,24 +103,27 @@ for gen in range(start_gen, end_gen):
     survivors = int(population_size * thanos_mod)
     population = population[:survivors]
 
-    # TODO Make this work:
-    ### # Creating a list of probabilities of being cloned for each survivor based on their fitness.
-    ### # Accounts for negative score by subracting the last agent's score.
-    ### score_sum = sum((agent.score - population[-1].score) for agent in population)
-    ### clone_probs = [(agent.score - population[-1].score) / score_sum for agent in population]
+    # Creating a list of probabilities of being cloned for each survivor based on their fitness.
+    # Accounts for negative score by subracting the last agent's score.
+    score_sum = sum((agent.score - population[-1].score) for agent in population)
+    if score_sum == 0:
+        print("The population has degenerated and the score sum is 0. Exiting...")
+        exit()
+    else:
+        clone_probs = [(agent.score - population[-1].score) / score_sum for agent in population]
 
     # Creating clones from survivors.
-    ### clones = [np.random.choice(population, p=clone_probs).mutate(mutation_mod) for clone in range(population_size-len(population))]
-    clones = [agent.mutate(mutation_mod) for agent in population]
+    clones = [np.random.choice(population, p=clone_probs).split(layer_sizes, mutation_mod) for clone in range(population_size-len(population))]
+    ### clones = [agent.split(mutation_mod) for agent in population]
 
     # Adding clones to population.
     population.extend(clones)
 
     # Progress report
-    print("Generation {} done!".format(gen))
+    print("Generation {} done!".format(gen + 1))
     top_agent = population[0]
-    print("Top agent was a generation {} agent with {} score and {} total wins.".format(
-        top_agent.gen, top_agent.score, top_agent.wins))
+    print("The top agent was a {} generation agent with {} total wins.".format(
+        top_agent.gen, top_agent.wins))
 
     # Records the new generation.
     filename = "gen" + str(gen+1) + ".pkl"
