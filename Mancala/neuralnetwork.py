@@ -65,13 +65,18 @@ class NeuralNetwork:
         weight_shapes = [(a, b) for a, b in zip(layer_sizes[1:], layer_sizes[:-1])]
         weight_mutations = [mutation_mod*np.random.standard_normal(s)/(s[1]**0.5) for s in weight_shapes]
         bias_mutations = [mutation_mod*np.random.standard_normal((s, 1))/(s**0.5) for s in layer_sizes[1:]]
-
+        
+        weights = clone.weights
+        biases = clone.biases
+        
         # Mutates the clone
-        for i in range(len(clone._weights)):
-            clone.weights[i] += weight_mutations[i]
-
-        for i in range(len(clone.biases)):
-            clone.biases[i] += bias_mutations[i]
-
+        for i in range(len(weights)):
+            weights[i] = np.add(weights[i], weight_mutations[i])
+            
+        for i in range(len(biases)):
+            biases[i] = np.add(biases[i], bias_mutations[i])
+            
+        clone.weights = weights
+        clone.biases = biases
         # Returns mutated clone.
         return clone

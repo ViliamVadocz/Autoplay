@@ -16,9 +16,9 @@ layer_sizes: tuple = (14, 10, 10, 6)
 # Population size determines number of agents in each generation.
 # If you are changing the population size, make sure to delete the archived populations or they will load instead and everything will break.
 # TODO Fix above mentioned problem
-population_size: int = 100
+population_size: int = 300
 
-assert population_size >= 10, "Population size is too small."
+assert population_size >= 20, "Population size is too small."
 
 # Mutation modifier (Larger number means larger mutations).
 mutation_mod = 0.5
@@ -131,6 +131,26 @@ for gen in range(start_gen, end_gen):
     # Records the new generation.
     filename = "gen" + str(gen+1) + ".pkl"
     popa.write(population, filename)
+
+    # DEBUG
+    '''
+    test = popa.load(filename)
+    
+    for p1, p2 in zip(population, test):
+        w1 = []
+        for entry in p1.weights:
+            w1 = np.concatenate((w1,np.ravel(entry)))
+        w2 = []
+        for entry in p2.weights:
+            w2 = np.concatenate((w2, np.ravel(entry)))
+        
+        diff = sum(np.subtract(w1, w2))
+        
+        if np.size(w1) != np.size(w2):
+            print("SIZE",np.size(w1),"DID NOT MATCH",np.size(w2))
+        if diff != 0:
+            print("DIFF NOT ZERO!",diff)
+    '''
 
 
 print("Done!")
