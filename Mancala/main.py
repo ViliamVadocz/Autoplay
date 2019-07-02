@@ -15,11 +15,11 @@ layer_sizes = (14, 10, 10, 6)
 population_size = 250
 
 # Mutation modifier (Larger number means smaller mutations).
-mutation_mod = 1
+mutation_mod = 5
 
 # Start and end points for the evolution.
 # Set start_gen to largest reached generation before break to automatically load from where you left off.
-start_gen = 128
+start_gen = 0
 end_gen = 1000
 
 # ---------------------------------------------------------------------------
@@ -38,7 +38,7 @@ else:
 # ---------------------------------------------------------------------------
 
 # EVOLUTION LOOP
-for gen in range(start_gen, end_gen):
+for gen in range(start_gen, end_gen + 1):
 
     # Resets agent score so old agents don't get an advantage.
     for agent in population:
@@ -92,11 +92,18 @@ for gen in range(start_gen, end_gen):
     for agent in population:
         clones.append(agent.mutate(mutation_mod))
 
+    #TODO Change mutation method.
+
     # Adding clones to population.
     population = [*population, *clones]
 
+    # Progress report
+    print("Generation {} done!".format(gen))
+    top_agent = population[0]
+    print("Top agent was a generation {} agent with {} score and {} total wins.".format(top_agent.gen,top_agent.score,top_agent.wins))
+
     # Records the new generation.
-    file = "gen" + str(gen + 1) + ".pkl"
+    file = "gen" + str(gen) + ".pkl"
     popa.write(population,file)
     
 

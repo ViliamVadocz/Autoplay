@@ -30,7 +30,7 @@ class NeuralNetwork:
         '''Creates a clone of the neural network and mutates values randomly.'''
         # Creates a clone of itself and bumps up the generation.
         clone = NeuralNetwork(self.layer_sizes)
-        clone.weight = self.weights
+        clone.weights = self.weights
         clone.biases = self.biases
         clone.gen = self.gen + 1
 
