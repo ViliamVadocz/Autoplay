@@ -1,3 +1,5 @@
+'''The Neural Network for the game Mancala.'''
+
 import numpy as np
 class NeuralNetwork:
 

@@ -1,6 +1,25 @@
+'''Human Friendly Mancala. Run this file to play against the evolved agents. Setup below.'''
+
 import neuralnetwork as nn
 import poparchives as popa
 import numpy as np
+
+# ---------------------------------------------------------------------------
+
+# SETUP:
+
+# Load in generation to play against.
+# Change the filename to the generation who's agents you want to play against.
+population = popa.load("gen0.pkl")
+
+# 0 or 1 depending on whether human goes first or second. (0 means first.)
+human = 0
+
+# Rank of the agent in the generation. (0 is first, 1 is second, ..., -1 is last.)
+# Change this if you want to try different agents in the same generation.
+rank = 0
+
+# ---------------------------------------------------------------------------
 
 class Human_Friendly_Mancala:
     
@@ -109,7 +128,6 @@ class Human_Friendly_Mancala:
                 print("* It's a draw! Score was [{} : {}]".format(
                     self.board[6], self.board[13]))
 
-
     @staticmethod
     def print_board(boardstate: list):
         '''Prints the board. Expects the boardstate as input.'''
@@ -124,20 +142,12 @@ class Human_Friendly_Mancala:
 
 # ---------------------------------------------------------------------------
 
-# SETUP:
+# RUNNING THE GAME:
 
-# Load in generation to play against.
-population = popa.load("gen271.pkl")
-
-# 0 or 1 depending on whether human goes first or second. (0 means first.)
-human = 0
-
-# ---------------------------------------------------------------------------
-
-# Pick top-scoring agent.
-agent = population[0]
+# Pick agent.
+agent = population[rank]
 print("#"*50)
-print("Playing against the top agent born in generation {} with {} total wins.".format(agent.gen, agent.wins))
+print("Playing against the agent born in generation {} with {} total wins.".format(agent.gen, agent.wins))
 
 # Create mancala game object.
 game = Human_Friendly_Mancala()

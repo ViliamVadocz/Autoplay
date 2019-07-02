@@ -1,3 +1,5 @@
+'''Population Archives. Custom library to handle saving and loading of the agent populations.'''
+
 import pickle
 from pathlib import Path
 

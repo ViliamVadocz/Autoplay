@@ -1,3 +1,5 @@
+'''Mancala. This is the version of the game the bots play. Same as Human Friendly Mancala, except without the print outs.'''
+
 class Mancala:
 
     def __init__(self):

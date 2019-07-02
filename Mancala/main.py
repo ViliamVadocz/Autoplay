@@ -1,3 +1,5 @@
+'''Main file. Run this if you want to evolve some agents. You can also tweak the parameters below for different results.'''
+
 import mancala as mncl
 import neuralnetwork as nn
 import poparchives as popa
@@ -14,7 +16,8 @@ layer_sizes: tuple = (14, 10, 10, 6)
 # Population size determines number of agents in each generation.
 # If you are changing the population size, make sure to delete the archived populations or they will load instead and everything will break.
 # TODO Fix above mentioned problem
-population_size: int = 10
+population_size: int = 100
+
 assert population_size >= 10, "Population size is too small."
 
 # Mutation modifier (Larger number means larger mutations).
@@ -34,6 +37,8 @@ end_gen = 100
 
 # ---------------------------------------------------------------------------
 
+# POPULATION LOADING / CREATION:
+
 # Loading population data from file or creating a new population.
 filename = "gen" + str(start_gen) + ".pkl"
 try:
@@ -52,7 +57,8 @@ else:
 
 # ---------------------------------------------------------------------------
 
-# EVOLUTION LOOP
+# EVOLUTION LOOP:
+
 for gen in range(start_gen, end_gen):
 
     # Resets agent score so old agents don't get an advantage.
@@ -106,11 +112,8 @@ for gen in range(start_gen, end_gen):
     # Creating a list of probabilities of being cloned for each survivor based on their fitness.
     # Accounts for negative score by subracting the last agent's score.
     score_sum = sum((agent.score - population[-1].score) for agent in population)
-    if score_sum == 0:
-        print("The population has degenerated and the score sum is 0. Exiting...")
-        exit()
-    else:
-        clone_probs = [(agent.score - population[-1].score) / score_sum for agent in population]
+    assert score_sum != 0, "The population has degenerated and the score sum is 0."
+    clone_probs = [(agent.score - population[-1].score) / score_sum for agent in population]
 
     # Creating clones from survivors.
     clones = [np.random.choice(population, p=clone_probs).split(layer_sizes, mutation_mod) for clone in range(population_size-len(population))]
