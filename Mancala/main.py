@@ -21,7 +21,7 @@ population_size: int = 300
 assert population_size >= 20, "Population size is too small."
 
 # Mutation modifier (Larger number means larger mutations).
-mutation_mod = 0.5
+mutation_mod: float = 0.5
 
 # Percentage of populaiton to keep in each generation.
 # Has to be more than zero otherwise the population will never evolve.
@@ -32,22 +32,23 @@ assert 0 < thanos_mod < 1.0, "Thanos modifier is either too large or too small."
 
 # Start and end points for the evolution.
 # Set start_gen to largest reached generation before break to automatically load from where you left off.
-start_gen = 0
-end_gen = 100
+start_gen: int = 0
+end_gen: int = 175
 
 # ---------------------------------------------------------------------------
 
 # POPULATION LOADING / CREATION:
 
 # Loading population data from file or creating a new population.
-filename = "gen" + str(start_gen) + ".pkl"
+filename: str = "gen" + str(start_gen) + ".pkl"
 try:
     popa.load(filename)
 
 except:
     # Creates a new population if it cannot load from file.
     print("Creating a brand new population. Let there be light!")
-    population = [nn.NeuralNetwork(layer_sizes, 0) for agent in range(population_size)]
+    population = [nn.NeuralNetwork(layer_sizes, 0)
+                  for agent in range(population_size)]
     popa.write(population, filename)
 
 else:
@@ -111,12 +112,15 @@ for gen in range(start_gen, end_gen):
 
     # Creating a list of probabilities of being cloned for each survivor based on their fitness.
     # Accounts for negative score by subracting the last agent's score.
-    score_sum = sum((agent.score - population[-1].score) for agent in population)
+    score_sum = sum(
+        (agent.score - population[-1].score) for agent in population)
     assert score_sum != 0, "The population has degenerated and the score sum is 0."
-    clone_probs = [(agent.score - population[-1].score) / score_sum for agent in population]
+    clone_probs = [(agent.score - population[-1].score) /
+                   score_sum for agent in population]
 
     # Creating clones from survivors.
-    clones = [np.random.choice(population, p=clone_probs).split(layer_sizes, mutation_mod) for clone in range(population_size-len(population))]
+    clones = [np.random.choice(population, p=clone_probs).split(
+        layer_sizes, mutation_mod) for clone in range(population_size-len(population))]
     ### clones = [agent.split(mutation_mod) for agent in population]
 
     # Adding clones to population.

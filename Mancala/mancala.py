@@ -1,9 +1,10 @@
 '''Mancala. This is the version of the game the bots play. Same as Human Friendly Mancala, except without the print outs.'''
 
+
 class Mancala:
 
     def __init__(self):
-        '''Game creation.'''
+        """Game creation."""
         start_stones = 4
         self.board = [start_stones]*6 + [0] + [start_stones]*6 + [0]
         self.player = 0
@@ -11,7 +12,14 @@ class Mancala:
         self.result = None
 
     def valid_choice(self, pit: int):
-        '''Determines if the pit is valid (on correct side of the board and not empty).'''
+        """Determines if the pit is valid (on the correct side and not empty).
+
+        Arguments:
+            pit {int} -- The chosen pit.
+
+        Returns:
+            bool -- True if valid, False if invalid.
+        """
 
         # Calculates what the chosen pit is on the board based on the player.
         board_pit = self.player*7 + pit
@@ -22,8 +30,12 @@ class Mancala:
             return False
 
     def take_turn(self, pit: int):
-        '''Takes a turn in the game Mancala. Expects an integer for the chosen pit to pick stones out of.'''
+        """Takes a turn in the game.
 
+        Arguments:
+            pit {int} -- Chosen pit to take the stones out of.
+        """
+        
         # Calculates what the chosen pit is on the board based on the player.
         board_pit = self.player*7 + pit
 

@@ -21,10 +21,13 @@ rank = 0
 
 # ---------------------------------------------------------------------------
 
+# CLASS DEFINITION:
+
+
 class Human_Friendly_Mancala:
-    
+
     def __init__(self):
-        '''Game creation.'''
+        """Game creation."""
         start_stones = 4
         self.board = [start_stones]*6 + [0] + [start_stones]*6 + [0]
         self.player = 0
@@ -34,7 +37,14 @@ class Human_Friendly_Mancala:
         self.print_board(self.board)
 
     def valid_choice(self, pit: int):
-        '''Determines if the pit is valid (on correct side of the board and not empty).'''
+        """Determines if the pit is valid (on the correct side and not empty).
+
+        Arguments:
+            pit {int} -- The chosen pit.
+
+        Returns:
+            bool -- True if valid, False if invalid.
+        """
 
         # Calculates what the chosen pit is on the board based on the player.
         board_pit = self.player*7 + pit
@@ -53,12 +63,17 @@ class Human_Friendly_Mancala:
             return False
 
     def take_turn(self, pit: int):
-        '''Takes a turn in the game Mancala. Expects an integer for the chosen pit to pick stones out of.'''
+        """Takes a turn in the game.
+
+        Arguments:
+            pit {int} -- Chosen pit to take the stones out of.
+        """
 
         # Calculates what the chosen pit is on the board based on the player.
         board_pit = self.player*7 + pit
 
-        print("* Player {} picked pit [{}] (board pit [{}]) with [{}] stones.".format(self.player, pit, board_pit, self.board[board_pit]))
+        print("* Player {} picked pit [{}] (board pit [{}]) with [{}] stones.".format(
+            self.player, pit, board_pit, self.board[board_pit]))
 
         # Picks up stones from the pit.
         stones_in_hand = self.board[board_pit]
@@ -130,7 +145,12 @@ class Human_Friendly_Mancala:
 
     @staticmethod
     def print_board(boardstate: list):
-        '''Prints the board. Expects the boardstate as input.'''
+        """Prints the board.
+
+        Arguments:
+            boardstate {list} -- The state of the board.
+        """
+
         # Converts the board list into how the board would look in real life so it is recognisable to humans.
         print()
         print("-"*25)
@@ -144,10 +164,12 @@ class Human_Friendly_Mancala:
 
 # RUNNING THE GAME:
 
+
 # Pick agent.
 agent = population[rank]
 print("#"*50)
-print("Playing against the agent born in generation {} with {} total wins.".format(agent.gen, agent.wins))
+print("Playing against the agent born in generation {} with {} total wins.".format(
+    agent.gen, agent.wins))
 
 # Create mancala game object.
 game = Human_Friendly_Mancala()
@@ -171,7 +193,7 @@ while game.is_active:
             except:
                 print("Invalid input.")
             else:
-                if game.valid_choice(int(user_input)): 
+                if game.valid_choice(int(user_input)):
                     game.take_turn(int(user_input))
 
     # Agent plays takes its turn.
@@ -193,4 +215,3 @@ while game.is_active:
         # Agent takes the first valid move from prioritised choice list.
         print(choices[0][n])
         game.take_turn(choices[0][n])
-
