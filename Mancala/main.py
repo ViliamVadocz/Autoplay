@@ -33,7 +33,7 @@ assert 0 < thanos_mod < 1.0, "Thanos modifier is either too large or too small."
 # Start and end points for the evolution.
 # Set start_gen to largest reached generation before break to automatically load from where you left off.
 start_gen: int = 0
-end_gen: int = 175
+end_gen: int = 176
 
 # ---------------------------------------------------------------------------
 
