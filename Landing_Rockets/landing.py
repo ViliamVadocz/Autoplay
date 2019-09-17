@@ -5,7 +5,23 @@ def f(x, a):
     """Modified sigmoid function. Larger values for a give steeper rise."""
     return 2 / (1 + np.exp(a*x)) - 1
 
-
+def cap(value : float, minimum : float, maximum : float) -> float:
+    """Caps the value at given minumum and maximum.
+    
+    Arguments:
+        value {float} -- The value being capped.
+        minimum {float} -- Smallest value.
+        maximum {float} -- Largest value.
+    
+    Returns:
+        float -- The capped value or the original value if within range.
+    """
+    if value > maximum:
+        return maximum
+    elif value < minimum:
+        return minimum
+    else:
+        return value
 
 class Rocket:
     def __init__(self):
