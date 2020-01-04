@@ -123,6 +123,7 @@ class SeededGridentify(Gridentify):
         return board
 
     def new_num(self) -> np.ndarray:
+        """Really bad randomness, same as in the original game."""
         e = (16807 * self.seed) % 1924421567
         self.seed = e if e > 0 else e + 3229763266
         num = (e % 3) + 1
