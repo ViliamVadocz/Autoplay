@@ -1,20 +1,46 @@
+from dataclasses import dataclass, field
+from typing import List, Set
 import numpy as np
+
+@dataclass
+class Move:
+    final: int
+    used: Set[int] = field(default_factory=set)
+
+    def __eq__(self, other):
+        return self.final == other.final and self.used == other.used
+
+    def view(self):
+        board = np.zeros(25, dtype=np.byte)
+        for tile in self.used:
+            board[tile] = 1
+        board[self.final] = 2
+
+        out = ''
+        for arr in np.split(board, 5):
+            out += '\n' + str(arr).replace('0', ' ').replace('1', '+').replace('2', '@')
+        return out
+
+    def copy(self):
+        return Move(self.final, self.used)
 
 class Gridentify:
 
     def __init__(self, board = None):
         self.score = 0
         # Generate new board if not supplied with one.
-        self.board = self.new_board(5) if board is None else  board
+        self.board = self.new_board(5) if board is None else board
 
     @staticmethod
-    def new_board(x): return np.random.randint(1, 4, (x**2,), dtype=np.uint16)
+    def new_board(x: int) -> np.ndarray:
+        return np.random.randint(1, 4, (x**2,), dtype=np.uint16)
 
     @staticmethod
-    def new_num(): return np.random.randint(1, 4, dtype=np.uint16)
+    def new_num() -> np.ndarray:
+        return np.random.randint(1, 4, dtype=np.uint16)
 
-    def get_neighboursOf(self):
-        neighboursOf = []
+    def get_neighbours_of(self) -> List[int]:
+        neighbours_of = []
         for i, value in enumerate(self.board):
             neighbours = []
             x = i % 5
@@ -23,29 +49,32 @@ class Gridentify:
             if y < 4 and self.board[i+5] == value: neighbours.append(i+5)
             if x > 0 and self.board[i-1] == value: neighbours.append(i-1)
             if y > 0 and self.board[i-5] == value: neighbours.append(i-5)
-            neighboursOf.append(neighbours)
-        return neighboursOf
+            neighbours_of.append(neighbours)
+        return neighbours_of
 
-    def valid_moves(self):
+    def valid_moves(self) -> List[Move]:
+        neighbours_of = self.get_neighbours_of()
+        moves = []
 
-        # TODO:
-        # - for each index, look for all possible moves?
-        pass
-
-    def move(self, final: int, used: int):
-        """Makes a move in the game.
+        # Thanks, alion
+        def discover_for(move: Move, tile: int):
+            for neighbour in neighbours_of[tile]:
+                if neighbour not in move.used:
+                    if move not in moves: moves.append(move)
+                    move.used.add(neighbour)
+                    discover_for(move.copy(), neighbour)
         
-        Arguments:
-            final {int} -- index of final position of move.
-            used {int} -- 25 bit int showing which indexes were 
-                used in the move and need to be reset.
-        """
-        for i, char in enumerate(bin(used)[2:]):
-            if char == '1':
-                self.board[final] += self.board[i]
-                self.board[i] = self.new_num()
+        for tile in self.board:
+            discover_for(Move(tile, set([tile])), tile)
 
-        self.score += self.board[i]
+        return moves
+
+    def make_move(self, move: Move):
+        self.board[move.final] *= len(move.used)
+        for tile in move.used: 
+            if tile != move.final: self.board[tile] = self.new_num()
+
+        self.score += self.board[move.final]
 
     def show_board(self):
         print('\n')
@@ -53,33 +82,9 @@ class Gridentify:
             print(arr)
 
 
-########
-def get_legal_moves():
-    moves = []
-    def discover_for(move, cell: int):
-        for next_cell in neighbours_of[cell]:
-            next_move = move + cell
-            if (move != next_move and moves.add(next_move)):
-                discover_for(next_move, next_cell)
-
-    for i in board:
-        value = board[i]
-        discover_for([i], i)
-
-    return moves
-
-
-public HashSet<Move> GetLegalMoves()
-    var moves = new HashSet<Move>();
-    void DiscoverFor(Move move, int cell)
-        foreach (var nextCell in NeighborsOf[cell])
-            if (Grid[nextCell] == value)
-                var nextMove = move | nextCell;
-                if (move != nextMove && moves.Add(nextMove))
-                    DiscoverFor(nextMove, nextCell);
-
-    for (int i = 0; i < 25; ++i)
-        value = Grid[i];
-        DiscoverFor(new Move(i), i);
-
-    return moves;
+if __name__ == "__main__":
+    game = Gridentify()
+    game.show_board()
+    moves = game.valid_moves()
+    for move in moves[:4]:
+        print(move.view())
