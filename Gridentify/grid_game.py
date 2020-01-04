@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Set
+from copy import deepcopy
 import numpy as np
 
 @dataclass
@@ -22,7 +23,7 @@ class Move:
         return out
 
     def copy(self):
-        return Move(self.final, self.used)
+        return deepcopy(self)
 
 class Gridentify:
 
@@ -60,12 +61,13 @@ class Gridentify:
         def discover_for(move: Move, tile: int):
             for neighbour in neighbours_of[tile]:
                 if neighbour not in move.used:
-                    if move not in moves: moves.append(move)
-                    move.used.add(neighbour)
-                    discover_for(move.copy(), neighbour)
+                    branch = move.copy()
+                    branch.used.add(neighbour)
+                    if branch not in moves: moves.append(branch)
+                    discover_for(branch, neighbour)
         
-        for tile in self.board:
-            discover_for(Move(tile, set([tile])), tile)
+        for i, tile in enumerate(self.board):
+            discover_for(Move(i, set([i])), i)
 
         return moves
 
@@ -81,10 +83,10 @@ class Gridentify:
         for arr in np.split(self.board, 5):
             print(arr)
 
-
 if __name__ == "__main__":
     game = Gridentify()
     game.show_board()
     moves = game.valid_moves()
-    for move in moves[:4]:
+    print(f'num of valid moves: {len(moves)}')
+    for move in moves[:5]:
         print(move.view())
