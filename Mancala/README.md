@@ -39,7 +39,7 @@ Possible to improve the simulation:
 Some artificial ways to improve the program:
 
 - Make a gui for playing the game.
-- Visualise the cloning process (make a graph showing which agent is decendant of which.)
+- Visualise the cloning process (make a graph showing which agent is descendant of which.)
 - Generate a name for each agent to give them some more personality.
 - Display an updating scoreboard of the current population.
   
