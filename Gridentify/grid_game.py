@@ -103,36 +103,19 @@ class Gridentify:
         print('\n ' + str(board)[1:-1])
 
 
-class SeededGridentify(Gridentify):
-
-    def __init__(self, seed = None, board = None):
-        self.score = 0
-        # Generate new seed if needed.
-        if seed is None:
-            ii32 = np.iinfo(np.int32)
-            seed = np.random.randint(1, ii32.max)
-            print(f'Generated random seed: {seed}')
-        self.seed = seed
-        # Generate new board if not supplied with one.
-        self.board = self.new_board(5) if board is None else board
-
-    def new_board(self, x: int) -> np.ndarray:
-        board = np.empty((x**2,), dtype=np.uint16)
-        for i in range(x**2):
-            board[i] = self.new_num()
-        return board
-
-    def new_num(self) -> np.ndarray:
-        """Really bad randomness, same as in the original game."""
-        e = (16807 * self.seed) % 1924421567
-        self.seed = e if e > 0 else e + 3229763266
-        num = (e % 3) + 1
-        return num
-
-
 if __name__ == "__main__":
-    game = SeededGridentify()
+    test = np.array([
+        3,   3,   1,   1,   3,
+        3,   3,   2,   3,   1,
+        1,   1,   2,   2,   1,
+        1,   1,   3,   2,   1,
+        3,   1,   1,   1,   2
+    ])
+    game = Gridentify(board=test)
     valid_moves = game.valid_moves()
+
+    # print(len(valid_moves))
+
     move = Move(-1)
 
     while len(valid_moves) > 0:
