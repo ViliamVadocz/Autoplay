@@ -21,7 +21,7 @@ class Move:
         out = ''
         for arr in np.split(board, 5):
             # Paint by numbers.
-            out += '\n' + str(arr).replace('0', ' ').replace('1', '+').replace('2', '@')
+            out += '\n ' + str(arr).replace('0', ' ').replace('1', '+').replace('2', '@')
         return out
 
     def copy(self):
@@ -93,13 +93,38 @@ class Gridentify:
 
     def show_board(self):
         """Show a human-friendly view of the board."""
+        board = self.board.reshape((5,5))
         print('\n')
-        for arr in np.split(self.board, 5):
-            print(arr)
+        print(' '+str(board)[1:-1])
+
+
+class SeededGridentify(Gridentify):
+    def __init__(self, seed = None, board = None):
+        self.score = 0
+        # Generate new seed if needed.
+        if seed is None:
+            ii32 = np.iinfo(np.int32)
+            seed = np.random.randint(1, ii32.max)
+            print(f'Generated random seed: {seed}')
+        self.seed = seed
+        # Generate new board if not supplied with one.
+        self.board = self.new_board(5) if board is None else board
+
+    def new_board(self, x: int) -> np.ndarray:
+        board = np.empty((x**2,), dtype=np.uint16)
+        for i in range(x**2):
+            board[i] = self.new_num()
+        return board
+
+    def new_num(self) -> np.ndarray:
+        e = (16807 * self.seed) % 1924421567
+        self.seed = e if e > 0 else e + 3229763266
+        num = (e % 3) + 1
+        return num
 
 
 if __name__ == "__main__":
-    game = Gridentify()
+    game = SeededGridentify()
     valid_moves = game.valid_moves()
     move = Move(-1)
 
