@@ -164,54 +164,54 @@ class Human_Friendly_Mancala:
 
 # RUNNING THE GAME:
 
+if __name__ == "__main__":
+    # Pick agent.
+    agent = population[rank]
+    print("#"*50)
+    print("Playing against the agent born in generation {} with {} total wins.".format(
+        agent.gen, agent.wins))
 
-# Pick agent.
-agent = population[rank]
-print("#"*50)
-print("Playing against the agent born in generation {} with {} total wins.".format(
-    agent.gen, agent.wins))
+    # Create mancala game object.
+    game = Human_Friendly_Mancala()
 
-# Create mancala game object.
-game = Human_Friendly_Mancala()
+    # Run the game.
+    while game.is_active:
+        print("Player {}'s turn:".format(game.player))
 
-# Run the game.
-while game.is_active:
-    print("Player {}'s turn:".format(game.player))
+        # Checks if it's the human's turn.
+        if game.player == human:
+            user_input = input()
 
-    # Checks if it's the human's turn.
-    if game.player == human:
-        user_input = input()
+            # Allows for exit out of game.
+            if user_input in "exit quit esc end":
+                break
 
-        # Allows for exit out of game.
-        if user_input in "exit quit esc end":
-            break
-
-        # Validates input and takes turn.
-        else:
-            try:
-                int(user_input)
-            except:
-                print("Invalid input.")
+            # Validates input and takes turn.
             else:
-                if game.valid_choice(int(user_input)):
-                    game.take_turn(int(user_input))
+                try:
+                    int(user_input)
+                except:
+                    print("Invalid input.")
+                else:
+                    if game.valid_choice(int(user_input)):
+                        game.take_turn(int(user_input))
 
-    # Agent plays takes its turn.
-    else:
-        # Takes the game board and changes into a column vector for the agents to process.
-        board_input = np.array(game.board).reshape((len(game.board), 1))
+        # Agent plays takes its turn.
+        else:
+            # Takes the game board and changes into a column vector for the agents to process.
+            board_input = np.array(game.board).reshape((len(game.board), 1))
 
-        # Calculates output of the neural network for the given boardstate input.
-        output = agent.choose(board_input)
+            # Calculates output of the neural network for the given boardstate input.
+            output = agent.choose(board_input)
 
-        # Reshapes the output into a list of prioritised choices.
-        choices = np.argsort(output.reshape((1, 6)))
+            # Reshapes the output into a list of prioritised choices.
+            choices = np.argsort(output.reshape((1, 6)))
 
-        # Test each choice in turn until it finds a valid move.
-        n = 0
-        while not game.valid_choice(choices[0][n]):
-            n += 1
+            # Test each choice in turn until it finds a valid move.
+            n = 0
+            while not game.valid_choice(choices[0][n]):
+                n += 1
 
-        # Agent takes the first valid move from prioritised choice list.
-        print(choices[0][n])
-        game.take_turn(choices[0][n])
+            # Agent takes the first valid move from prioritised choice list.
+            print(choices[0][n])
+            game.take_turn(choices[0][n])
