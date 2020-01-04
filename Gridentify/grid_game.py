@@ -13,15 +13,21 @@ class Move:
 
     def view(self):
         """Human-friendly view of the move."""
-        board = np.zeros(25, dtype=np.byte)
+        board = np.zeros((5,5), dtype=np.byte)
         for tile in self.used:
-            board[tile] = 1
-        board[self.final] = 2
+            x = tile % 5
+            y = tile // 5
+            board[x, y] = 1
 
-        out = ''
-        for arr in np.split(board, 5):
-            # Paint by numbers.
-            out += '\n ' + str(arr).replace('0', ' ').replace('1', '+').replace('2', '@')
+        x = self.final % 5
+        y = self.final // 5
+        board[x, y] = 2
+            
+        # Paint by numbers.
+        out = '\n '+ str(board)[1:-1]\
+            .replace('0', ' ')\
+            .replace('1', '+')\
+            .replace('2', '@')
         return out
 
     def copy(self):
@@ -76,7 +82,7 @@ class Gridentify:
                     discover_for(branch, neighbour)
         
         # Look at moves that end on each tile of the board.
-        for i, tile in enumerate(self.board):
+        for i, value in enumerate(self.board):
             discover_for(Move(i, set([i])), i)
 
         return moves
@@ -94,11 +100,11 @@ class Gridentify:
     def show_board(self):
         """Show a human-friendly view of the board."""
         board = self.board.reshape((5,5))
-        print('\n')
-        print(' '+str(board)[1:-1])
+        print('\n ' + str(board)[1:-1])
 
 
 class SeededGridentify(Gridentify):
+
     def __init__(self, seed = None, board = None):
         self.score = 0
         # Generate new seed if needed.
