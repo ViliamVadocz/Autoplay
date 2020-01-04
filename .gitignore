@@ -108,6 +108,7 @@ dmypy.json
 
 ### VisualStudioCode ###
 .vscode/*
+*/.vscode/*
 *.code-workspace
 
 ### VisualStudioCode Patch ###
