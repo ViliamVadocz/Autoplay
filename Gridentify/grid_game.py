@@ -100,9 +100,19 @@ class Gridentify:
 
 if __name__ == "__main__":
     game = Gridentify()
-    game.show_board()
-    moves = game.valid_moves()
-    print(f'num of valid moves: {len(moves)}')
-    # Look at first five valid moves to check if they make sense.
-    for move in moves[:5]:
+    valid_moves = game.valid_moves()
+    move = Move(-1)
+
+    while len(valid_moves) > 0:
+        game.show_board()
+
+        while move not in valid_moves:
+            # THIS IS WHERE THE MOVE MACHINE SHOULD GO.
+            move = valid_moves[0] # Always picking first move.
+
         print(move.view())
+        game.make_move(move)
+        valid_moves = game.valid_moves()
+        
+    print(f'Score: {game.score}')
+    
