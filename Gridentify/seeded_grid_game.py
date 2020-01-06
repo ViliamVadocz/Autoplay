@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Tuple
 from copy import deepcopy
 import numpy as np
 
 from grid_game import Gridentify
+import seeded_bot
 
 @dataclass
 class Move:
@@ -30,7 +31,7 @@ class Move:
 
 class SeededGridentify(Gridentify):
 
-    def __init__(self, seed = None, board = None):
+    def __init__(self, board = None, seed = None):
         self.score = 0
         # Generate new seed if needed.
         if seed is None:
@@ -47,7 +48,7 @@ class SeededGridentify(Gridentify):
             board[i] = self.new_num()
         return board
 
-    def new_num(self) -> np.ndarray:
+    def new_num(self) -> int:
         """Really bad randomness, same as in the original game."""
         e = (16807 * self.seed) % 1924421567
         self.seed = e if e > 0 else e + 3229763266
@@ -91,14 +92,7 @@ class SeededGridentify(Gridentify):
 
 
 if __name__ == "__main__":
-    test = np.array([
-        3,   3,   1,   1,   3,
-        3,   3,   2,   3,   1,
-        1,   1,   2,   2,   1,
-        1,   1,   3,   2,   1,
-        3,   1,   1,   1,   2
-    ])
-    game = SeededGridentify(board=test, seed=123)
+    game = SeededGridentify(seed=20766236554)
     valid_moves = game.valid_moves()
 
     # print(len(valid_moves))
@@ -109,12 +103,15 @@ if __name__ == "__main__":
         game.show_board()
 
         while move not in valid_moves:
-            # THIS IS WHERE THE MOVE MACHINE SHOULD GO.
-            move = valid_moves[0] # Always picking first move.
+            # THIS IS WHERE THE MOVE MACHINE GOES.
+            if len(valid_moves) > 0:
+                board = deepcopy(game.board)
+                move = seeded_bot.tree_search(board, game.seed, depth=3)[1]
+            else: 
+                move = valid_moves[0]
 
         print(move.view())
         game.make_move(move)
         valid_moves = game.valid_moves()
         
     print(f'Score: {game.score}')
-    
