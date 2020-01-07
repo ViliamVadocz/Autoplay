@@ -102,7 +102,8 @@ def eval_sum(board: np.ndarray) -> int:
 @jit(nopython=True)
 def eval_corners(board: np.ndarray) -> int:
     """Static board evaluation. Focuses on placing large numbers in the corners."""
-    return 10 * max(board[0], board[4], board[20], board[24])
+    # return board[0] + board[4] + board[20] + board[24]
+    return max(board[0], board[4], board[20], board[24])
 
 # Alion's special sauce.
 weights = np.array([
@@ -112,21 +113,31 @@ weights = np.array([
         [   4,   8,  16,  32,  64],
         [2048,1024, 512, 256, 128]
     ])
-#Get reflections and different orientations of the board.
+
+# Get rotations and flips of the weights.
 a_weights = weights.reshape((25,))
-b_weights = np.rot90(weights).reshape((25,))
-c_weights = weights.T.reshape((25,))
-d_weights = np.rot90(weights.T).reshape((25,))
+b_weights = np.rot90(weights, 1).reshape((25,))
+c_weights = np.rot90(weights, 2).reshape((25,))
+d_weights = np.rot90(weights, 3).reshape((25,))
+e_weights = np.fliplr(weights).reshape((25,))
+f_weights = np.fliplr(np.rot90(weights, 1)).reshape((25,))
+g_weights = np.fliplr(np.rot90(weights, 2)).reshape((25,))
+h_weights = np.fliplr(np.rot90(weights, 3)).reshape((25,))
+
 @jit(nopython=True)
 def eval_scrabble(board: np.ndarray) -> int:
-    """Static board evaluation. Focuses on placing large numbers in the corners."""
-    a = board * a_weights
-    b = board * b_weights
-    c = board * c_weights
-    d = board * d_weights
-    return max(np.sum(a), np.sum(b), np.sum(c), np.sum(d))
+    """Static board evaluation. Uses tile weights to get value of board."""
+    a = np.sum(a_weights * board)
+    b = np.sum(b_weights * board)
+    c = np.sum(c_weights * board)
+    d = np.sum(d_weights * board)
+    e = np.sum(e_weights * board)
+    f = np.sum(f_weights * board)
+    g = np.sum(g_weights * board)
+    h = np.sum(h_weights * board)
+    return max(a, b, c, d, e, f, g, h)
 
-def board_eval(board: np.ndarray, seed: int) -> int:
+def board_eval(board: np.ndarray, seed: int) -> float:
     """Static board evaluation. Combines various evaluations."""
     nbo = eval_neighbours(board)
     scr = eval_scrabble(board)
@@ -134,9 +145,10 @@ def board_eval(board: np.ndarray, seed: int) -> int:
 
 ### ###
 
+
 good_values = set([1,2,3,6,12,24,48,96,192,384,768,1536,3072,6144,12288,24578,49152])
 good_move_lens = set([2,3,4,6,8,12,24])
-def tree_search(board: np.ndarray, seed: int, depth: int) -> Tuple[int, Union[Move,None]]:
+def tree_search(board: np.ndarray, seed: int, depth: int) -> Tuple[float, Union[Move,None]]:
     """Recursive tree search to find best move."""
 
     if depth == 0:
@@ -144,34 +156,28 @@ def tree_search(board: np.ndarray, seed: int, depth: int) -> Tuple[int, Union[Mo
 
     else:
         valid_moves = gen_valid_moves(board)
+
+        # return negative infinity if board position has no valid moves.
+        if len(valid_moves) == 0:
+            return np.NINF, None
+
         move_evals = np.zeros((len(valid_moves),))
 
+        panic = len(valid_moves) < 5
+        # if panic: print('PANIC')
+
         for i, move in enumerate(valid_moves):
-            # Prune useless move lengths.
-            if len(move.used) not in good_move_lens:
-                move_evals[i] = 0
 
-            # Many available moves, can be picky.
-            elif len(valid_moves) > 5:
-                new_board, new_seed = simulate_move(board.copy(), seed, move)
-
-                # Only evaluate moves which are ok.
-                if new_board[move.final] not in good_values:
-                    move_evals[i] = 0
-                else:
-                    move_evals[i], best_move = tree_search(new_board, new_seed, depth - 1)
-
-            # PANIC mode: Evaluate all moves.
-            else:
-                # print('PANIC')
+            # Prune bad moves if not panicing.
+            result = board[move.final] * len(move.used)
+            if panic or (len(move.used) in good_move_lens and result in good_values):
                 new_board, new_seed = simulate_move(board.copy(), seed, move)
                 move_evals[i], best_move = tree_search(new_board, new_seed, depth - 1)
-
-        if len(move_evals) == 0: 
-            return 0, None
+            
+            else:
+                continue
 
         else:
-            assert len(valid_moves) == len(move_evals), 'BIG PANIC!'
             move_index = np.argmax(move_evals)
             best_eval = move_evals[move_index]
 
