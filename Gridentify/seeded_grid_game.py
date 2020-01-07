@@ -120,12 +120,12 @@ if __name__ == "__main__":
 
             num_ok_moves = seeded_bot.eval_num_moves(board, game.seed)
             if num_ok_moves > 0:
-                a = int(20/num_ok_moves)
+                a = int(30/num_ok_moves)
                 # a = max(0, int(5 - num_ok_moves/5))
                 # a = int(100/len(valid_moves))
             else:
                 a = 100
-            depth = min(a, 3) + 2
+            depth = min(a, 5) + 2
             print(f'Depth for next move: {depth}')
             evaluation, move = seeded_bot.tree_search(board, game.seed, depth=depth)
             print(f'Move eval: {evaluation}')
