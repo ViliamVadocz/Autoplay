@@ -141,7 +141,7 @@ def tree_search(board: np.ndarray, seed: int, depth: int) -> Tuple[int, Union[Mo
         move_evals = np.zeros((len(valid_moves),))
 
         for i, move in enumerate(valid_moves):
-            # Prune moves longer than 4.
+            # Prune useless move lengths.
             if len(move.used) not in good_move_lens:
                 move_evals[i] = 0
 
