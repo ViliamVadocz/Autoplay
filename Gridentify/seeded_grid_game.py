@@ -93,10 +93,9 @@ class SeededGridentify(Gridentify):
 
 if __name__ == "__main__":
     # Make new game.
-    # test_board = np.array([ 4, 24,  6, 24,  1, 4,  1,  1,  1, 24, 6,  3,  1,  1,  3, 4,  3,  6, 24,  2, 24,  3, 12,  2,  1], dtype=np.uint16)
-    test_seed =  20766236554 #1679830877
+    test_seed =  20766236554
     print(f'seed: {test_seed}')
-    game = SeededGridentify(seed=test_seed) #, board=test_board)
+    game = SeededGridentify(seed=test_seed)
     game.show_board()
 
     # Initial moves.
@@ -111,7 +110,7 @@ if __name__ == "__main__":
             # THIS IS WHERE THE MOVE MACHINE GOES.
             if len(valid_moves) > 0:
                 board = game.board.copy()
-                move = seeded_bot.tree_search(board, game.seed, depth=3)[1]
+                move = seeded_bot.tree_search(board, game.seed, depth=4)[1]
             else: 
                 move = valid_moves[0]
 
@@ -122,7 +121,8 @@ if __name__ == "__main__":
         print(move.view())
         game.make_move(move)
         game.show_board()
+        print(f'\nScore: {game.score}')
         # Get new valid moves.
         valid_moves = game.valid_moves()
         
-    print(f'Score: {game.score}')
+    print('Game Over')
