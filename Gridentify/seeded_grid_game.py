@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Tuple
 from copy import deepcopy
 import numpy as np
+import time
 
 from grid_game import Gridentify
 import seeded_bot
@@ -94,6 +95,9 @@ class SeededGridentify(Gridentify):
 
 
 if __name__ == "__main__":
+    # Start a timer.
+    start_time = time.time()
+
     # Make new game.
     test_seed =  20766236554
     # print(f'seed: {test_seed}')
@@ -105,7 +109,7 @@ if __name__ == "__main__":
 
     move_num = 0
     while len(valid_moves) > 0:
-        print(f'Move #{move_num}')
+        print(f'\nMove #{move_num}')
         move_num += 1
 
         move = Move(-1)
@@ -113,9 +117,15 @@ if __name__ == "__main__":
             # THIS IS WHERE THE MOVE MACHINE GOES.            
             board = game.board.copy()
 
-            a = int(80/seeded_bot.eval_num_moves(board, game.seed))
+            num_ok_moves = seeded_bot.eval_num_moves(board, game.seed)
+            if num_ok_moves > 0:
+                a = int(80/num_ok_moves)
+                # a = int(10 - num_ok_moves/10)
+                # a = int(100/len(valid_moves))
+            else:
+                a = 100
             depth = min(a, 6) + 2
-            print(f'\nDepth for next move: {depth}')
+            print(f'Depth for next move: {depth}')
             move = seeded_bot.tree_search(board, game.seed, depth=depth)[1]
         
         # Show the game.
@@ -126,4 +136,13 @@ if __name__ == "__main__":
         # Get new valid moves.
         valid_moves = game.valid_moves()
         
-    print('Game Over')
+    print('\nGame Over')
+
+    # End the timer
+    end_time = time.time()
+
+    seconds = end_time - start_time
+    minutes = seconds // 60
+    seconds %= 60
+
+    print(f'Time: {int(minutes)}m {int(seconds)}s')
