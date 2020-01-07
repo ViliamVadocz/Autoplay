@@ -38,6 +38,8 @@ class SeededGridentify(Gridentify):
             ii32 = np.iinfo(np.int32)
             seed = np.random.randint(1, ii32.max)
             print(f'Generated random seed: {seed}')
+        else:
+            print(f'Seed: {seed}')
         self.seed = seed
         # Generate new board if not supplied with one.
         self.board = self.new_board(5) if board is None else board
@@ -94,7 +96,7 @@ class SeededGridentify(Gridentify):
 if __name__ == "__main__":
     # Make new game.
     test_seed =  20766236554
-    print(f'seed: {test_seed}')
+    # print(f'seed: {test_seed}')
     game = SeededGridentify(seed=test_seed)
     game.show_board()
 
@@ -102,20 +104,19 @@ if __name__ == "__main__":
     valid_moves = game.valid_moves()
 
     move_num = 0
-
     while len(valid_moves) > 0:
+        print(f'Move #{move_num}')
+        move_num += 1
 
         move = Move(-1)
         while move not in valid_moves:
-            # THIS IS WHERE THE MOVE MACHINE GOES.
-            if len(valid_moves) > 0:
-                board = game.board.copy()
-                move = seeded_bot.tree_search(board, game.seed, depth=4)[1]
-            else: 
-                move = valid_moves[0]
+            # THIS IS WHERE THE MOVE MACHINE GOES.            
+            board = game.board.copy()
 
-        print(f'\nMove #{move_num}')
-        move_num += 1
+            a = int(80/seeded_bot.eval_num_moves(board, game.seed))
+            depth = min(a, 6) + 2
+            print(f'\nDepth for next move: {depth}')
+            move = seeded_bot.tree_search(board, game.seed, depth=depth)[1]
         
         # Show the game.
         print(move.view())

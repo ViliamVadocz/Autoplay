@@ -68,6 +68,8 @@ def simulate_move(board: np.ndarray, seed: int, move: Move) -> Tuple[np.ndarray,
     return board, seed #, move_score
 
 
+### EVALUATION FUNCTIONS ###
+
 def eval_num_moves(board: np.ndarray, seed: int) -> int:
     """Static board evaluation. Focuses on number of ok moves."""
     valid_moves = gen_valid_moves(board)
@@ -76,7 +78,7 @@ def eval_num_moves(board: np.ndarray, seed: int) -> int:
     # Simulate every move to see what they would make.
     for move in valid_moves:
         new_board, new_seed = simulate_move(board.copy(), seed, move)
-        # Check whether created value is "good"
+        # Check whether created value is "good".
         if new_board[move.final] not in good_values:
             continue
         else:
@@ -127,6 +129,7 @@ def board_eval(board: np.ndarray, seed: int) -> int:
     """Static board evaluation. Combines lots of different evaluations."""
     return 1000 * eval_neighbours(board) + eval_scrabble(board)
 
+### ###
 
 good_values = set([1,2,3,6,12,24,48,96,192,384,768,1536,3072,6144,12288,24578,49152])
 good_move_lens = set([2,3,4,6,8,12,24])
