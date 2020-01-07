@@ -109,8 +109,9 @@ if __name__ == "__main__":
 
     move_num = 0
     while len(valid_moves) > 0:
-        print(f'\nMove #{move_num}')
         move_num += 1
+        print(f'\n--- Move #{move_num} ---')
+        print(f'Number of valid moves: {len(valid_moves)}')
 
         move = Move(-1)
         while move not in valid_moves:
@@ -120,13 +121,14 @@ if __name__ == "__main__":
             num_ok_moves = seeded_bot.eval_num_moves(board, game.seed)
             if num_ok_moves > 0:
                 a = int(20/num_ok_moves)
-                # a = int(10 - num_ok_moves/10)
+                # a = max(0, int(5 - num_ok_moves/5))
                 # a = int(100/len(valid_moves))
             else:
                 a = 100
             depth = min(a, 3) + 2
             print(f'Depth for next move: {depth}')
-            move = seeded_bot.tree_search(board, game.seed, depth=depth)[1]
+            evaluation, move = seeded_bot.tree_search(board, game.seed, depth=depth)
+            print(f'Move eval: {evaluation}')
         
         # Show the game.
         print(move.view())

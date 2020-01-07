@@ -112,6 +112,7 @@ weights = np.array([
         [   4,   8,  16,  32,  64],
         [2048,1024, 512, 256, 128]
     ])
+#Get reflections and different orientations of the board.
 a_weights = weights.reshape((25,))
 b_weights = np.rot90(weights).reshape((25,))
 c_weights = weights.T.reshape((25,))
@@ -126,8 +127,10 @@ def eval_scrabble(board: np.ndarray) -> int:
     return max(np.sum(a), np.sum(b), np.sum(c), np.sum(d))
 
 def board_eval(board: np.ndarray, seed: int) -> int:
-    """Static board evaluation. Combines lots of different evaluations."""
-    return 1000 * eval_neighbours(board) + eval_scrabble(board)
+    """Static board evaluation. Combines various evaluations."""
+    nbo = eval_neighbours(board)
+    scr = eval_scrabble(board)
+    return 1000 * nbo + scr
 
 ### ###
 
