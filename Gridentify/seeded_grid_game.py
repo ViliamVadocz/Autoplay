@@ -125,10 +125,10 @@ if __name__ == "__main__":
                 # a = int(100/len(valid_moves))
             else:
                 a = 100
-            depth = min(a, 5) + 2
+            depth = min(a, 4) + 2
             print(f'Depth for next move: {depth}')
             evaluation, move = seeded_bot.tree_search(board, game.seed, depth=depth)
-            print(f'Move eval: {evaluation}')
+            print(f'Move eval: {evaluation:.2f}')
         
         # Show the game.
         print(move.view())

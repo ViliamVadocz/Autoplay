@@ -113,6 +113,14 @@ weights = np.array([
         [   4,   8,  16,  32,  64],
         [2048,1024, 512, 256, 128]
     ])
+# weights = np.array([
+#         [      0,       1,       2,       4,       8],
+#         [    256,     128,      64,      32,      16],
+#         [    512,    1024,    2048,    4096,    8192],
+#         [ 262144,  131072,   65536,   32768,   16384],
+#         [ 524288, 1048576, 2097152, 4194304, 8388608]
+#     ])
+# weights[:,:] = weights[:,:] / 1_000
 
 # Get rotations and flips of the weights.
 a_weights = weights.reshape((25,))
@@ -125,7 +133,7 @@ g_weights = np.fliplr(np.rot90(weights, 2)).reshape((25,))
 h_weights = np.fliplr(np.rot90(weights, 3)).reshape((25,))
 
 @jit(nopython=True)
-def eval_scrabble(board: np.ndarray) -> int:
+def eval_scrabble(board: np.ndarray) -> float:
     """Static board evaluation. Uses tile weights to get value of board."""
     a = np.sum(a_weights * board)
     b = np.sum(b_weights * board)
@@ -141,7 +149,7 @@ def board_eval(board: np.ndarray, seed: int) -> float:
     """Static board evaluation. Combines various evaluations."""
     nbo = eval_neighbours(board)
     scr = eval_scrabble(board)
-    return 1000 * nbo + scr
+    return 100 * nbo*np.log10(scr) + scr
 
 ### ###
 
