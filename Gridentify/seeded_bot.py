@@ -61,8 +61,9 @@ def simulate_move(board: np.ndarray, seed: int, move: Move) -> Tuple[np.ndarray,
     board[move.final] *= len(move.used)
     # Resets all used tiles except final (in select-order).
     for tile in move.used[::-1]:
-        seed, num = new_num(seed)
-        if tile != move.final: board[tile] = num
+        if tile != move.final:
+            seed, num = new_num(seed)
+            board[tile] = num
     # Add to score.
     # move_score = board[move.final]
     return board, seed #, move_score
@@ -75,13 +76,26 @@ def eval_num_moves(board: np.ndarray, seed: int) -> int:
     valid_moves = gen_valid_moves(board)
     num_ok_moves = 0
 
-    # Simulate every move to see what they would make.
+    # Look at every move to see what it would make.
+    # Also look at how long it is.
     for move in valid_moves:
-        new_board, new_seed = simulate_move(board.copy(), seed, move)
+        result = board[move.final] * len(move.used)
         # Check whether created value is "good".
-        if new_board[move.final] not in good_values:
-            continue
-        else:
+        if len(move.used) in good_move_lens and result in good_values:
+            num_ok_moves += 1
+
+    return num_ok_moves
+
+def eval_num_moves_old(board: np.ndarray, seed: int) -> int:
+    """Static board evaluation. Focuses on number of ok moves."""
+    valid_moves = gen_valid_moves(board)
+    num_ok_moves = 0
+
+    # Look at every move to see what it would make.
+    for move in valid_moves:
+        result = board[move.final] * len(move.used)
+        # Check whether created value is "good".
+        if result in good_values:
             num_ok_moves += 1
 
     return num_ok_moves
@@ -106,22 +120,34 @@ def eval_corners(board: np.ndarray) -> int:
     return max(board[0], board[4], board[20], board[24])
 
 # Alion's special sauce.
-weights = np.array([
+alion_special_sauce = np.array([
         [ 128, 256, 512,1024,2048],
         [  64,  32,  16,   8,   4],
         [   2,   1,   0,   1,   2],
         [   4,   8,  16,  32,  64],
         [2048,1024, 512, 256, 128]
     ])
-# weights = np.array([
-#         [      0,       1,       2,       4,       8],
-#         [    256,     128,      64,      32,      16],
-#         [    512,    1024,    2048,    4096,    8192],
-#         [ 262144,  131072,   65536,   32768,   16384],
-#         [ 524288, 1048576, 2097152, 4194304, 8388608]
-#     ])
-# weights[:,:] = weights[:,:] / 1_000
 
+alion_simple = np.array([
+    [ 8, 9,10,11,12],
+    [ 7, 6, 5, 4, 3],
+    [ 2, 1, 0, 1, 2],
+    [ 3, 4, 5, 6, 7],
+    [12,11,10, 9, 8]
+])
+alion_simple = 2 ** alion_simple
+
+one_corner_coil = np.array([
+        [ 4, 3, 2, 1, 0],
+        [ 5,12,13,14,15],
+        [ 6,11,18,17,16],
+        [ 7,10,19,22,23],
+        [ 8, 9,20,21,24]
+    ])
+one_corner_coil = 2 ** one_corner_coil
+one_corner_coil = one_corner_coil
+
+weights = alion_special_sauce
 # Get rotations and flips of the weights.
 a_weights = weights.reshape((25,))
 b_weights = np.rot90(weights, 1).reshape((25,))
@@ -171,6 +197,8 @@ def tree_search(board: np.ndarray, seed: int, depth: int) -> Tuple[float, Union[
 
         move_evals = np.zeros((len(valid_moves),))
 
+        # Panic when the number of possible moves is low.
+        # This is just to let it die when the last few moves are 'bad moves'.
         panic = len(valid_moves) < 5
         # if panic: print('PANIC')
 
@@ -183,7 +211,7 @@ def tree_search(board: np.ndarray, seed: int, depth: int) -> Tuple[float, Union[
                 move_evals[i], best_move = tree_search(new_board, new_seed, depth - 1)
             
             else:
-                continue
+                move_evals[i] = np.NINF
 
         else:
             move_index = np.argmax(move_evals)
