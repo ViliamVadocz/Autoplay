@@ -137,15 +137,15 @@ alion_simple = np.array([
 ])
 alion_simple = 2 ** alion_simple
 
-one_corner_coil = np.array([
+one_corner_snail = np.array([
         [ 4, 3, 2, 1, 0],
         [ 5,12,13,14,15],
         [ 6,11,18,17,16],
         [ 7,10,19,22,23],
         [ 8, 9,20,21,24]
     ])
-one_corner_coil = 2 ** one_corner_coil
-one_corner_coil = one_corner_coil
+one_corner_snail = 2 ** one_corner_snail
+one_corner_snail = one_corner_snail / 4000
 
 weights = alion_special_sauce
 # Get rotations and flips of the weights.

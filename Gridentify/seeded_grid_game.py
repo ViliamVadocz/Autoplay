@@ -118,7 +118,7 @@ if __name__ == "__main__":
             # THIS IS WHERE THE MOVE MACHINE GOES.            
             board = game.board.copy()
 
-            num_ok_moves = seeded_bot.eval_num_moves(board, game.seed)
+            num_ok_moves = seeded_bot.eval_num_moves_old(board, game.seed)
             if num_ok_moves > 0:
                 a = int(30/num_ok_moves)
                 # a = max(0, int(5 - num_ok_moves/5))
