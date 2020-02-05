@@ -119,7 +119,7 @@ Cargo.lock
 **/*.rs.bk
 
 ### VisualStudioCode ###
-.vscode/*
+**/.vscode/*
 *.code-workspace
 
 ### VisualStudioCode Patch ###
