@@ -1,2 +1,2 @@
-# MachineLearning
-Small machine learning projects
+# Autoplay
+Small bots to automatically play various games.
