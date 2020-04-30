@@ -1,27 +1,19 @@
-#[derive(Debug, Clone, Copy)]
-pub enum Suit {
-    Club,
-    Heart,
-    Spade,
-    Diamond
-}
-
-impl Suit {
-    fn from(letter: char) -> Result<Suit, &'static str> {
-        match letter {
-            'C' => Ok(Suit::Club),
-            'H' => Ok(Suit::Heart),
-            'S' => Ok(Suit::Spade),
-            'D' => Ok(Suit::Diamond),
-            _ => Err("unknown suit")
-        }
-    }
-}
+use std::fmt;
 
 #[derive(Debug)]
 pub enum CardPlace {
     Known(Card),
     Unknown
+}
+
+impl fmt::Display for CardPlace {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let output = match self {
+            CardPlace::Known(card) => format!("{}", card),
+            CardPlace::Unknown => "???".to_string()
+        };
+        write!(f, "{}", output)
+    }
 }
 
 #[derive(Debug)]
@@ -43,7 +35,6 @@ impl Card {
         }
         // otherwise first char is suit
         let suit = Suit::from(suit_char).unwrap();
-        let num_char = char_iter.next().unwrap();
         let value = match num_char.to_digit(10) {
             Some(digit) => digit,
             None => match num_char {
@@ -56,5 +47,48 @@ impl Card {
             }
         };
         Card::SuitCard {value, suit}
+    }
+}
+
+impl fmt::Display for Card {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let output = match self {
+            Card::SuitCard {suit, value} => format!("{0} {1}", suit, value),
+            Card::Joker {id} => format!("Joker {}", id)
+        };
+        write!(f, "{}", output)
+    }
+}
+
+
+#[derive(Debug, Clone, Copy)]
+pub enum Suit {
+    Club,
+    Heart,
+    Spade,
+    Diamond
+}
+
+impl Suit {
+    fn from(letter: char) -> Result<Suit, &'static str> {
+        match letter {
+            'C' => Ok(Suit::Club),
+            'H' => Ok(Suit::Heart),
+            'S' => Ok(Suit::Spade),
+            'D' => Ok(Suit::Diamond),
+            _ => Err("unknown suit")
+        }
+    }
+}
+
+impl fmt::Display for Suit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let output = match self {
+            Suit::Club => "Club",
+            Suit::Heart => "Heart",
+            Suit::Spade => "Spade",
+            Suit::Diamond => "Diamond"
+        };
+        write!(f, "{}", output)
     }
 }

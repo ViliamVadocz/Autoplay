@@ -1,4 +1,4 @@
-use crate::messages::GameMessage;
+use crate::messages::{GameMessage, LastAction};
 use crate::card::*;
 
 pub struct Game {
@@ -49,6 +49,7 @@ impl Game {
         // use previous action to update knowledge
         if let Some(previous_action) = &previous_player.last_action {
             println!("{0} played: {1:?}", previous_player.name, previous_action);
+            let action_taken = Action::from(previous_action);
         } else {
             println!("{} played: no previous action", previous_player.name);
         }
@@ -76,4 +77,26 @@ pub struct PlayerInfo {
     name: String,
     index: usize,
     hand: Vec<CardPlace>
+}
+
+pub enum Action {
+    Draw(Option<Card>),
+    Trick(Vec<Card>)
+}
+
+impl Action {
+    fn from(action: &LastAction) -> Action {
+        match &action.action_type.as_str() {
+            &"draw" => {
+                match &action.card {
+                    Some(card) => Action::Draw(Some(Card::from(card.to_string()))),
+                    None => Action::Draw(None)
+                }
+            },
+            &"play" => Action::Trick(
+                action.cards.iter().map(|card| Card::from(card.to_string())).collect()
+            ),
+            _ => panic!("invalid move type in last move")
+        }
+    }
 }
