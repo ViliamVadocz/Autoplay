@@ -1,35 +1,42 @@
 use crate::messages::GameMessage;
+use crate::card::*;
 
 pub struct Game {
-    pub players: Vec<PlayerInfo>,
+    pub my_hand: Vec<Card>,
     pub deck_size: u32,
     pub center: Vec<Card>,
-    pub cards_seen: Vec<Card>,
+    pub unseen_cards: Vec<Card>,
+    pub players: Vec<PlayerInfo>,
     pub current_player_index: usize,
-    pub has_moves: bool,
-    pub hand: Vec<String> // TODO
+    pub has_moves: bool
 }
 
 impl Game {
     pub fn new() -> Game {
+        
+
         Game {
-            players: Vec::new(),
+            my_hand: Vec::new(),
             deck_size: 56,
             center: Vec::new(),
-            cards_seen: Vec::new(),
+            unseen_cards: Vec::new(),
+            players: Vec::new(),
             current_player_index: 0,
             has_moves: true,
-            hand: Vec::new()
         }
     }
 
     pub fn start(&mut self, players: Vec<String>) {
-        self.players = players.iter().map(|name| PlayerInfo {name: name.to_string(), hand_size: 2, known_cards: Vec::new()}).collect();
-        self.deck_size -= 2 * (self.players.len() as u32);
+        self.players = players.iter().enumerate().map(
+            |(i, name)| PlayerInfo {
+                name: name.to_string(),
+                index: i,
+                hand: vec![CardPlace::Unknown, CardPlace::Unknown]
+            }).collect();
     }
 
     pub fn update(&mut self, message: GameMessage) {
-        self.hand = message.hand;
+        self.my_hand = message.hand.iter().map(|card| Card::from(card.to_string())).collect();
         // parse game state
         let game_state = message.game_state;
         self.has_moves = game_state.has_moves;
@@ -55,65 +62,18 @@ impl Game {
         println!("deck size: {}", deck_size);
     }
 
-    // // get the probability that a card is in the deck
-    // fn card_in_deck(self, card: Card) -> f32 {
-    //     if card in self.seen {
-    //         return 0.0;
-    //     } else {
-    //         return 1.0 / f32::from(self.deck_size) 
-    //     }
-    // }
+    fn get_start_deck() -> Vec<Card> {
+        let mut start_deck: Vec<Card> = Vec::new();
+        for &suit in [Suit::Club, Suit::Heart, Suit::Spade, Suit::Diamond].iter() {
+            start_deck.extend((2..15).map(|value| Card::SuitCard {suit, value}).collect::<Vec<Card>>());
+        }
+        start_deck.extend((1..5).map(|id| Card::Joker {id}));
+        start_deck
+    }
 }
 
 pub struct PlayerInfo {
     name: String,
-    hand_size: u32,
-    known_cards: Vec<Card>
-}
-
-enum Suit {
-    Club,
-    Heart,
-    Spade,
-    Diamond,
-    Joker
-}
-
-impl Suit {
-    fn from(letter: char) -> Result<Suit, &'static str> {
-        match letter {
-            'C' => Ok(Suit::Club),
-            'H' => Ok(Suit::Heart),
-            'S' => Ok(Suit::Spade),
-            'D' => Ok(Suit::Diamond),
-            'J' => Ok(Suit::Joker),
-            _ => Err("unknown suit")
-        }
-    }
-}
-
-pub struct Card {
-    value: u32,
-    suit: Suit
-}
-
-impl Card {
-    fn from(card_string: String) -> Card {
-        let mut char_iter = card_string.chars();
-        let suit_str = char_iter.next().unwrap();
-        let suit = Suit::from(suit_str).unwrap();
-        let num_str = char_iter.next().unwrap();
-        let value = match num_str.to_digit(10) {
-            Some(digit) => digit,
-            None => match num_str {
-                'X' => 10,
-                'J' => 11,
-                'Q' => 12,
-                'K' => 13,
-                'A' => 14,
-                _ => 0
-            }
-        };
-        Card {value, suit}
-    }
+    index: usize,
+    hand: Vec<CardPlace>
 }

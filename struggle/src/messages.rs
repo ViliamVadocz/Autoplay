@@ -29,6 +29,7 @@ pub fn get_error_name(code: i32) -> &'static str {
         102 => "NotInCenter",
         103 => "NotInHand",
         104 => "NotValidTrick",
+        105 => "HandIsFull",
         
         200 => "GameIsNotRunning",
         201 => "YouAreNotInGame",

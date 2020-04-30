@@ -68,7 +68,7 @@ impl StruggleBot {
                     println!("error: {}", error_text);
 
                     // check if server expects a response after error
-                    if [101, 102, 103, 104, 300, 301, 302].contains(&message.error_code) {
+                    if [101, 102, 103, 104, 105, 300, 301, 302].contains(&message.error_code) {
                         self.take_action(manual)?;
                     }
                 },
@@ -92,7 +92,7 @@ impl StruggleBot {
                     self.game.update(message);
                     // my turn
                     if self.game.has_moves && self.game.current_player_index == self.index {
-                        println!("hand: {:?}", self.game.hand);
+                        println!("hand: {:?}", self.game.my_hand);
                         self.take_action(manual)?;
                     }
                 }
@@ -104,13 +104,12 @@ impl StruggleBot {
         let mut action: String;
         if manual {
             action = get_user_input()?;
-            if !action.ends_with("\n") {
-                action.push_str(&"\n");
-            }
+            remove_newlines(&mut action);
         } else {
             // TODO determine move
-            action = String::from("draw\n");
+            action = String::from("draw");
         }
+        action.push_str(&"\n");
         self.stream.as_ref().unwrap().write(action.as_bytes())?;
         Ok(())
     }
@@ -126,6 +125,6 @@ fn get_user_input() -> Result<String> {
     Ok(buffer)
 }
 
-fn remove_whitespace(s: &mut String) {
-    s.retain(|c| !c.is_whitespace());
+fn remove_newlines(s: &mut String) {
+    s.retain(|c| c != '\n');
 }
