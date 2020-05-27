@@ -1,5 +1,6 @@
 use crate::messages::{GameMessage, LastAction};
 use crate::card::*;
+use crate::action::*;
 
 pub struct Game {
     pub my_hand: Vec<Card>,
@@ -13,8 +14,6 @@ pub struct Game {
 
 impl Game {
     pub fn new() -> Game {
-        
-
         Game {
             my_hand: Vec::new(),
             deck_size: 56,
@@ -28,11 +27,13 @@ impl Game {
 
     pub fn start(&mut self, players: Vec<String>) {
         self.players = players.iter().enumerate().map(
-            |(i, name)| PlayerInfo {
-                name: name.to_string(),
+            |(i, &name)| PlayerInfo {
+                name: name,
                 index: i,
                 hand: vec![CardPlace::Unknown, CardPlace::Unknown]
             }).collect();
+        self.unseen_cards = self.get_start_deck()
+        // we don't have to deal with deck size, etc. because that will be updated in update()
     }
 
     pub fn update(&mut self, message: GameMessage) {
@@ -50,6 +51,7 @@ impl Game {
         if let Some(previous_action) = &previous_player.last_action {
             println!("{0} played: {1:?}", previous_player.name, previous_action);
             let action_taken = Action::from(previous_action);
+            action_taken.update(self, previous_player_index)
         } else {
             println!("{} played: no previous action", previous_player.name);
         }
@@ -76,27 +78,6 @@ impl Game {
 pub struct PlayerInfo {
     name: String,
     index: usize,
-    hand: Vec<CardPlace>
-}
-
-pub enum Action {
-    Draw(Option<Card>),
-    Trick(Vec<Card>)
-}
-
-impl Action {
-    fn from(action: &LastAction) -> Action {
-        match &action.action_type.as_str() {
-            &"draw" => {
-                match &action.card {
-                    Some(card) => Action::Draw(Some(Card::from(card.to_string()))),
-                    None => Action::Draw(None)
-                }
-            },
-            &"play" => Action::Trick(
-                action.cards.iter().map(|card| Card::from(card.to_string())).collect()
-            ),
-            _ => panic!("invalid move type in last move")
-        }
-    }
+    hand: Vec<CardPlace>,
+    // tricks_played: Vec<Trick>
 }

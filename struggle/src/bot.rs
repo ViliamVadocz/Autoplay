@@ -106,12 +106,16 @@ impl StruggleBot {
             action = get_user_input()?;
             remove_newlines(&mut action);
         } else {
-            // TODO determine move
-            action = String::from("draw");
+            action = self.generate_move()?;
         }
         action.push_str(&"\n");
         self.stream.as_ref().unwrap().write(action.as_bytes())?;
         Ok(())
+    }
+
+    fn generate_move(&mut self) -> String {
+        // TODO
+        String::from("draw")
     }
 }
 
