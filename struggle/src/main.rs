@@ -2,6 +2,7 @@ mod messages;
 mod bot;
 mod game;
 mod card;
+mod action;
 
 use std::io::Result;
 use crate::bot::StruggleBot;

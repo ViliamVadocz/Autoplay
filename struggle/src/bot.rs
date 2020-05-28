@@ -113,9 +113,9 @@ impl StruggleBot {
         Ok(())
     }
 
-    fn generate_move(&mut self) -> String {
+    fn generate_move(&mut self) -> Result<String> {
         // TODO
-        String::from("draw")
+        Ok(String::from("draw"))
     }
 }
 

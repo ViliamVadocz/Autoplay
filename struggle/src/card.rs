@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum CardPlace {
     Known(Card),
     Unknown
@@ -16,7 +16,7 @@ impl fmt::Display for CardPlace {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Card {
     SuitCard {value: u32, suit: Suit},
     Joker {id: u32}
@@ -61,7 +61,7 @@ impl fmt::Display for Card {
 }
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Suit {
     Club,
     Heart,

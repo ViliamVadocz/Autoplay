@@ -1,4 +1,4 @@
-use crate::messages::{GameMessage, LastAction};
+use crate::messages::GameMessage;
 use crate::card::*;
 use crate::action::*;
 
@@ -32,7 +32,7 @@ impl Game {
                 index: i,
                 hand: vec![CardPlace::Unknown, CardPlace::Unknown]
             }).collect();
-        self.unseen_cards = self.get_start_deck()
+        self.unseen_cards = Game::get_start_deck()
         // we don't have to deal with deck size, etc. because that will be updated in update()
     }
 
@@ -76,8 +76,8 @@ impl Game {
 }
 
 pub struct PlayerInfo {
-    name: String,
-    index: usize,
-    hand: Vec<CardPlace>,
+    pub name: String,
+    pub index: usize,
+    pub hand: Vec<CardPlace>,
     // tricks_played: Vec<Trick>
 }
