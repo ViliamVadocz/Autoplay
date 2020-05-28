@@ -92,7 +92,7 @@ impl StruggleBot {
                     self.game.update(message);
                     // my turn
                     if self.game.has_moves && self.game.current_player_index == self.index {
-                        println!("hand: {:?}", self.game.my_hand);
+                        println!("hand: {:?}", &self.game.my_hand);
                         self.take_action(manual)?;
                     }
                 }
@@ -100,7 +100,7 @@ impl StruggleBot {
         }
     }
 
-    fn take_action(&self, manual: bool) -> Result<()> {
+    fn take_action(&mut self, manual: bool) -> Result<()> {
         let mut action: String;
         if manual {
             action = get_user_input()?;

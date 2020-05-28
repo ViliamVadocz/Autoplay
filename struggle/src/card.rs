@@ -1,22 +1,6 @@
 use std::fmt;
 
-#[derive(Debug, PartialEq)]
-pub enum CardPlace {
-    Known(Card),
-    Unknown
-}
-
-impl fmt::Display for CardPlace {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let output = match self {
-            CardPlace::Known(card) => format!("{}", card),
-            CardPlace::Unknown => "???".to_string()
-        };
-        write!(f, "{}", output)
-    }
-}
-
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Card {
     SuitCard {value: u32, suit: Suit},
     Joker {id: u32}
@@ -61,7 +45,7 @@ impl fmt::Display for Card {
 }
 
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Suit {
     Club,
     Heart,

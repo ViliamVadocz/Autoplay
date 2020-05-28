@@ -1,5 +1,5 @@
 use crate::game::Game;
-use crate::card::{Card, CardPlace};
+use crate::card::Card;
 use crate::messages::LastAction;
 
 pub enum Action {
@@ -23,57 +23,40 @@ impl Action {
         }
     }
 
-    pub fn update(self, game: &mut Game, player_index: usize) {
-        let hand = &mut game.players[player_index].hand;
+    pub fn update_info(self, game: &mut Game, player_index: usize) {
+        let known_hand = &mut game.players[player_index].known_hand;
 
         match self {
-
             Action::Draw(optional_card) => {
                 if let Some(card) = optional_card {
                     // draw from centre
-                    hand.push(CardPlace::Known(card));
-                } else {
-                    // draw from deck
-                    hand.push(CardPlace::Unknown);
+                    known_hand.insert(card);
                 }
             }
 
             Action::Trick(card_vec) => {
-                if card_vec.len() == 1 {
-                    let Some(card) = card_vec.pop();
-                    match card {
-                        Card::Joker {id: _} => {
-                            // remove joker from unseen cards
-                            game.unseen_cards.remove_item(&card);
-                            // remove joker from hand
-                            remove_card_from_hand(hand, CardPlace::Known(card));                            
-                            // joker effect = add three cards to hand
-                            hand.push(CardPlace::Unknown);
-                            hand.push(CardPlace::Unknown);
-                            hand.push(CardPlace::Unknown);
-                        }
-                        Card::SuitCard {suit: _, value: _} => {
-                            panic!("somehow a trick with only one card was played that wasn't a joker");
-                        }
+                match card_vec[..] {
+                    [Card::Joker {id: _}] => {
+                        let card = &card_vec[0];
+                        // remove joker from unseen cards
+                        game.unseen_cards.remove(card);
+                        // remove joker from hand
+                        known_hand.remove(card);   
                     }
-                } else {
-                    // cards were probably dropped, so we need to remove any that are new from unseen_cards
-                    for card in game.center.iter() {
-                        game.unseen_cards.remove_item(card);
-                    }
-                    // remove used cards from hand
-                    for card in card_vec.iter() {
-                        game.unseen_cards.remove_item(card);
-                        remove_card_from_hand(hand, CardPlace::Known(*card));
+                    
+                    _ => {
+                        // cards were probably dropped, so we need to remove any that are new from unseen_cards
+                        for card in game.center.iter() {
+                            game.unseen_cards.remove(card);
+                        }
+                        // remove used cards from unseen and hand
+                        for card in card_vec.iter() {
+                            game.unseen_cards.remove(card);
+                            known_hand.remove(card);
+                        }
                     }
                 }
             }
         }
-    }
-}
-
-fn remove_card_from_hand(hand: &mut Vec<CardPlace>, card: CardPlace) {
-    if let None = hand.remove_item(&card) {
-        hand.remove_item(&CardPlace::Unknown);
     }
 }

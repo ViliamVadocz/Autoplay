@@ -17,3 +17,11 @@ fn main() -> Result<()> {
     // my_bot.connect("struggle.iameld3st.xyz:55445")?;
     my_bot.run(true)
 }
+
+// TODO
+
+// action -> message
+  // card -> string
+
+// make a basic bot
+  // plan?
