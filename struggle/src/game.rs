@@ -14,28 +14,24 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new() -> Game {
-        Game {
-            my_hand: HashSet::new(),
-            deck_size: 56,
-            center: Vec::new(),
-            unseen_cards: HashSet::new(),
-            players: Vec::new(),
-            current_player_index: 0,
-            has_moves: true,
-        }
-    }
-
-    pub fn start(&mut self, players: Vec<String>) {
-        self.players = players.iter().enumerate().map(
+    pub fn new(player_names: Vec<String>) -> Game {
+        let players = player_names.iter().enumerate().map(
             |(i, name)| PlayerInfo {
                 name: name.to_string(),
                 index: i,
                 hand_size: 2,
                 known_hand: HashSet::new()
             }).collect();
-        self.unseen_cards = Game::get_start_deck()
-        // we don't have to deal with deck size, etc. because that will be updated in update()
+
+        Game {
+            my_hand: HashSet::new(),
+            deck_size: 56, // this will be updated later
+            center: Vec::new(),
+            unseen_cards: Game::get_start_deck(),
+            players,
+            current_player_index: 0,
+            has_moves: true,
+        }
     }
 
     pub fn update(&mut self, message: GameMessage) {
