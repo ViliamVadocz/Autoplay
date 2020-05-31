@@ -9,6 +9,7 @@ use crate::{
         get_error_name,
         Message::{self, *}
     },
+    action::Action,
     game::Game
 };
 
@@ -115,7 +116,7 @@ impl StruggleBot {
 
     fn generate_move(&mut self) -> Result<String> {
         // TODO
-        Ok(String::from("draw"))
+        Ok(Action::Draw(None).to_message())
     }
 }
 

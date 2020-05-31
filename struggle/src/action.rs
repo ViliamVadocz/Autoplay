@@ -59,4 +59,18 @@ impl Action {
             }
         }
     }
+
+    pub fn to_message(self) -> String {
+        match self {
+            Action::Draw(optional_card) => {
+                match optional_card {
+                    Some(card) => format!("draw {}", card.repr()),
+                    None => String::from("draw")
+                }
+            },
+            Action::Trick(cards) => {
+                format!("play {}", cards.into_iter().map(|card| card.repr()).collect::<Vec<String>>().join(","))
+            }
+        }
+    }
 }

@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, char};
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Card {
@@ -32,6 +32,25 @@ impl Card {
         };
         Card::SuitCard {value, suit}
     }
+
+    pub fn repr(self) -> String {
+        match self {
+            Card::SuitCard {value, suit} => {
+                let value_char = match value {
+                    10 => 'X',
+                    11 => 'J',
+                    12 => 'Q',
+                    13 => 'K',
+                    14 => 'A',
+                    i => char::from_digit(i, 10).unwrap()
+                };
+                format!("{0}{1}", value_char, suit.repr())
+            },
+            Card::Joker {id} => {
+                format!("J{}", id)
+            }
+        }
+    }
 }
 
 impl fmt::Display for Card {
@@ -61,6 +80,15 @@ impl Suit {
             'S' => Ok(Suit::Spade),
             'D' => Ok(Suit::Diamond),
             _ => Err("unknown suit")
+        }
+    }
+
+    fn repr(self) -> char {
+        match self {
+            Suit::Club => 'C',
+            Suit::Heart => 'H',
+            Suit::Spade => 'S',
+            Suit::Diamond => 'D'
         }
     }
 }
