@@ -1,6 +1,8 @@
+use std::collections::HashSet;
 use crate::game::Game;
 use crate::card::Card;
 use crate::messages::LastAction;
+use crate::card::Suit::*;
 
 pub enum Action {
     Draw(Option<Card>),
@@ -9,17 +11,15 @@ pub enum Action {
 
 impl Action {
     pub fn from(action: &LastAction) -> Action {
-        match &action.action_type.as_str() {
-            &"draw" => {
-                match &action.card {
-                    Some(card) => Action::Draw(Some(Card::from(card.to_string()))),
-                    None => Action::Draw(None)
-                }
+        match action.action_type.as_str() {
+            "draw" => match &action.card {
+                Some(card) => Action::Draw(Some(Card::from(&card))),
+                None => Action::Draw(None)
             },
-            &"play" => Action::Trick(
-                action.cards.iter().map(|card| Card::from(card.to_string())).collect()
+            "play" => Action::Trick(
+                action.cards.iter().map(|card| Card::from(&card)).collect()
             ),
-            _ => panic!("invalid move type in last move")
+            _ => panic!("invalid action type in last action")
         }
     }
 
@@ -72,5 +72,65 @@ impl Action {
                 format!("play {}", cards.into_iter().map(|card| card.repr()).collect::<Vec<String>>().join(","))
             }
         }
+    }
+
+    pub fn possible(hand: &HashSet<Card>, center: &HashSet<Card>, deck_size: u32) -> Vec<Action> {
+        let mut actions = Vec::new();
+
+        // draw from deck if not empty
+        if deck_size > 0 {
+            actions.push(Action::Draw(None));
+        }
+
+        // draw a card from the center
+        for &card in center.iter() {
+            actions.push(Action::Draw(Some(card)))
+        }
+        
+        let mut club_cards = Vec::new();
+        let mut heart_cards = Vec::new();
+        let mut spade_cards = Vec::new();
+        let mut diamond_cards = Vec::new();
+        let mut numeric_tricks: Vec<Vec<Card>> = (1..15).map(|_| Vec::new()).collect();
+
+        // iterate over hand and keep track of possible hands
+        for &card in hand.iter() {
+            match card {
+                Card::SuitCard {suit, value} => {
+                    // track possible suit tricks
+                    match suit {
+                        Club => club_cards.push(card),
+                        Heart => heart_cards.push(card),
+                        Spade => spade_cards.push(card),
+                        Diamond => diamond_cards.push(card)
+                    };
+                    // track possible numeric tricks
+                    numeric_tricks[value as usize].push(card);
+                }
+                // add any joker tricks
+                Card::Joker {id: _} => actions.push(Action::Trick(vec![card]))
+            };
+        }
+
+        // add whole and valid tricks
+        if club_cards.len() > 1 {
+            actions.push(Action::Trick(club_cards));
+        }
+        if heart_cards.len() > 1 {
+            actions.push(Action::Trick(heart_cards));
+        }
+        if spade_cards.len() > 1 {
+            actions.push(Action::Trick(spade_cards));
+        }
+        if diamond_cards.len() > 1 {
+            actions.push(Action::Trick(diamond_cards));
+        }
+        for trick in numeric_tricks.into_iter() {
+            if trick.len() > 1 {
+                actions.push(Action::Trick(trick));
+            }
+        }
+
+        actions
     }
 }

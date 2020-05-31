@@ -1,6 +1,6 @@
 use std::{
-    net::TcpStream,
-    io::{BufReader, Result, Error, ErrorKind, prelude::*}
+    io::{BufReader, Error, ErrorKind, Result, prelude::*},
+    net::TcpStream
 };
 
 use crate::{
@@ -49,7 +49,7 @@ pub fn run_bot<B: StruggleBot>(mut bot: B, address: &str) -> Result<()> {
             GameInfo(message) => {
                 game.update(message);
 
-                // bot turn
+                // ask bot for action
                 if game.has_moves && game.current_player_index == bot_index {
                     println!("hand: {:?}", &game.my_hand);
                     let action = bot.generate_move(&game)?;
@@ -75,6 +75,7 @@ fn connect(name: &str, address: &str) -> Result<(TcpStream, SetupMessage)> {
         println!("received setup, players: {}", message.players.len());
         Ok((stream, message))
     } else {
+        // invalid response type
         println!("{:?}", response);
         Err(Error::new(ErrorKind::InvalidData, "the type received was not \"setup\""))
     }
@@ -87,11 +88,10 @@ fn receive(stream: &TcpStream) -> Result<Message> {
     Ok(serde_json::from_str::<Message>(msg.as_str())?)
 }
 
-fn send(mut stream: &TcpStream, mut msg: String) -> Result<()> {
+fn send(mut stream: &TcpStream, mut msg: String) -> Result<usize> {
     remove_newlines(&mut msg);
     msg.push_str(&"\n");
-    stream.write(msg.as_bytes())?;
-    Ok(())
+    stream.write(msg.as_bytes())
 }
 
 fn remove_newlines(s: &mut String) {

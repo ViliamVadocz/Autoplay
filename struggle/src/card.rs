@@ -1,13 +1,13 @@
 use std::{fmt, char};
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Card {
     SuitCard {value: u32, suit: Suit},
     Joker {id: u32}
 }
 
 impl Card {
-    pub fn from(card_string: String) -> Card {
+    pub fn from(card_string: &str) -> Card {
         // separate card into two characters
         let mut char_iter = card_string.chars();
         let suit_char = char_iter.next().unwrap();

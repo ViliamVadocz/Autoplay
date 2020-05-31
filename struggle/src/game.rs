@@ -6,7 +6,7 @@ use crate::action::*;
 pub struct Game {
     pub my_hand: HashSet<Card>,
     pub deck_size: u32,
-    pub center: Vec<Card>,
+    pub center: HashSet<Card>,
     pub unseen_cards: HashSet<Card>,
     pub players: Vec<PlayerInfo>,
     pub current_player_index: usize,
@@ -15,9 +15,9 @@ pub struct Game {
 
 impl Game {
     pub fn new(player_names: Vec<String>) -> Game {
-        let players = player_names.iter().enumerate().map(
+        let players = player_names.into_iter().enumerate().map(
             |(i, name)| PlayerInfo {
-                name: name.to_string(),
+                name: name,
                 index: i,
                 hand_size: 2,
                 known_hand: HashSet::new()
@@ -26,7 +26,7 @@ impl Game {
         Game {
             my_hand: HashSet::new(),
             deck_size: 56, // this will be updated later
-            center: Vec::new(),
+            center: HashSet::new(),
             unseen_cards: Game::get_start_deck(),
             players,
             current_player_index: 0,
@@ -37,15 +37,16 @@ impl Game {
     pub fn update(&mut self, message: GameMessage) {
         // this will be set but will not be directly used in Game
         // the bot will set game.players[bot.index] = game.my_hand
-        self.my_hand = message.hand.iter().map(|card| Card::from(card.to_string())).collect();
+        self.my_hand = message.hand.iter().map(|card| Card::from(card)).collect();
 
         // parse game state
         let game_state = message.game_state;
+        self.current_player_index = game_state.current_player;
         self.has_moves = game_state.has_moves;
         self.deck_size = game_state.deck_size;
-        self.current_player_index = game_state.current_player;
+        self.center = game_state.center.iter().map(|card| Card::from(card)).collect();
 
-        // let current_player = &game_state.players[self.current_player_index];
+        // update previous player info
         let previous_player_index = (self.current_player_index + self.players.len() - 1) % self.players.len();
         let previous_player = &game_state.players[previous_player_index];
         self.players[previous_player_index].hand_size = previous_player.hand_size;
@@ -61,12 +62,9 @@ impl Game {
         }
 
         println!("---");
-
         // print centre and deck
-        let center = &game_state.center;
-        println!("center: {:?}", center);
-        let deck_size = game_state.deck_size;
-        println!("deck size: {}", deck_size);
+        println!("center: {:?}", self.center);
+        println!("deck size: {}", self.deck_size);
     }
 
     fn get_start_deck() -> HashSet<Card> {

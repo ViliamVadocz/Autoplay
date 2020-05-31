@@ -9,8 +9,8 @@ use std::io::{self, Result, prelude::*};
 use crate::{
     action::Action,
     bot::StruggleBot,
-    manager::run_bot,
-    game::Game
+    game::Game,
+    manager::run_bot
 };
 
 #[macro_use]
@@ -40,8 +40,9 @@ impl StruggleBot for MyBot {
         if self.manual {
             get_user_input()
         } else {
-            // TODO proper strategy other than always drawing
-            Ok(Action::Draw(None).to_message())
+            let mut possible_actions = Action::possible(&game.my_hand, &game.center, game.deck_size);
+            let my_action = possible_actions.pop().unwrap();
+            Ok(my_action.to_message())
         }
     }
 }
