@@ -7,7 +7,7 @@ use crate::{
     messages::{
         get_error_name,
         SetupMessage,
-        Message::{self, *}
+        Message
     },
     game::Game,
     bot::StruggleBot
@@ -23,7 +23,7 @@ pub fn run_bot<B: StruggleBot>(mut bot: B, address: &str) -> Result<()> {
     loop {
         // receive response
         match receive(&stream)? {
-            GameError(message) => {
+            Message::GameError(message) => {
                 let error_text = get_error_name(message.error_code);
                 println!("error: {}", error_text);
 
@@ -34,9 +34,9 @@ pub fn run_bot<B: StruggleBot>(mut bot: B, address: &str) -> Result<()> {
                 }
             },
 
-            Setup(_) => return Err(Error::new(ErrorKind::InvalidData, "received unexpected \"setup\" message")),
+            Message::Setup(_) => return Err(Error::new(ErrorKind::InvalidData, "received unexpected \"setup\" message")),
 
-            GameOver(message) => {
+            Message::GameOver(message) => {
                 let winner = message.winner;
                 let winner_name = &message.game_state.players[winner].name;
                 println!("game over! winner: {}", winner_name);
@@ -46,7 +46,7 @@ pub fn run_bot<B: StruggleBot>(mut bot: B, address: &str) -> Result<()> {
                 return Ok(())
             },
 
-            GameInfo(message) => {
+            Message::GameInfo(message) => {
                 game.update(message);
 
                 // ask bot for action
@@ -71,7 +71,7 @@ fn connect(name: &str, address: &str) -> Result<(TcpStream, SetupMessage)> {
 
     // wait for setup message once a game starts
     let response = receive(&stream)?;
-    if let Setup(message) = response {
+    if let Message::Setup(message) = response {
         println!("received setup, players: {}", message.players.len());
         Ok((stream, message))
     } else {

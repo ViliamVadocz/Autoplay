@@ -1,5 +1,3 @@
-// use serde;
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "msgType")]
 pub enum Message {

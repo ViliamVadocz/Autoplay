@@ -41,8 +41,13 @@ impl StruggleBot for MyBot {
             get_user_input()
         } else {
             let mut possible_actions = Action::possible(&game.my_hand, &game.center, game.deck_size);
-            let my_action = possible_actions.pop().unwrap();
-            Ok(my_action.to_message())
+            possible_actions.sort_by_cached_key(|action| action.get_score());
+            let highest_score = possible_actions.pop().unwrap();
+            let possible_draw = possible_actions.into_iter().find_map(|action| match action {Action::Draw(_) => Some(action), _ => None});
+            Ok(match possible_draw {
+                Some(draw) => draw.to_message(),
+                None => highest_score.to_message()
+            })
         }
     }
 }

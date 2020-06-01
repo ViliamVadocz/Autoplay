@@ -1,8 +1,9 @@
 use std::collections::HashSet;
-use crate::game::Game;
-use crate::card::Card;
-use crate::messages::LastAction;
-use crate::card::Suit::*;
+use crate::{
+    game::Game,
+    card::*,
+    messages::LastAction
+};
 
 pub enum Action {
     Draw(Option<Card>),
@@ -99,10 +100,10 @@ impl Action {
                 Card::SuitCard {suit, value} => {
                     // track possible suit tricks
                     match suit {
-                        Club => club_cards.push(card),
-                        Heart => heart_cards.push(card),
-                        Spade => spade_cards.push(card),
-                        Diamond => diamond_cards.push(card)
+                        Suit::Club => club_cards.push(card),
+                        Suit::Heart => heart_cards.push(card),
+                        Suit::Spade => spade_cards.push(card),
+                        Suit::Diamond => diamond_cards.push(card)
                     };
                     // track possible numeric tricks
                     numeric_tricks[value as usize].push(card);
@@ -132,5 +133,25 @@ impl Action {
         }
 
         actions
+    }
+
+    pub fn get_score(&self) -> u32 {
+        match self {
+            Action::Draw(_) => 0,
+            Action::Trick(card_vec) => {
+                // jokers or empty tricks
+                if card_vec.len() < 2 {return 0;}
+                if let (Card::SuitCard {suit, value}, Card::SuitCard {suit: second_card_suit, value: _}) = (card_vec[0], card_vec[1]) {
+                    // suit trick (numeric trick cannot have two of the same suit)
+                    if suit == second_card_suit {
+                        let len = card_vec.len() as u32;
+                        len * len
+                    // numeric trick
+                    } else {
+                        (card_vec.len() as u32) * value
+                    }
+                } else {0}
+            }
+        }
     }
 }

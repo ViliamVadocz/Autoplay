@@ -1,7 +1,9 @@
 use std::collections::HashSet;
-use crate::messages::GameMessage;
-use crate::card::*;
-use crate::action::*;
+use crate::{
+    messages::GameMessage,
+    card::*,
+    action::*
+};
 
 pub struct Game {
     pub my_hand: HashSet<Card>,
