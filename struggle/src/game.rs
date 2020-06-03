@@ -17,7 +17,7 @@ impl Game {
             .into_iter()
             .enumerate()
             .map(|(i, name)| PlayerInfo {
-                name: name,
+                name,
                 index: i,
                 hand_size: 2,
                 known_hand: HashSet::new(),

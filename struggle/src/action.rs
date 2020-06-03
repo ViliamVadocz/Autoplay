@@ -30,8 +30,8 @@ impl Action {
             }
 
             Action::Trick(card_vec) => {
-                match card_vec[..] {
-                    [Card::Joker { id: _ }] => {
+                match card_vec.as_slice() {
+                    [Card::Joker { .. }] => {
                         let card = &card_vec[0];
                         // remove joker from unseen cards
                         game.unseen_cards.remove(card);
@@ -55,7 +55,7 @@ impl Action {
         }
     }
 
-    pub fn to_message(self) -> String {
+    pub fn convert_to_message(self) -> String {
         match self {
             Action::Draw(optional_card) => match optional_card {
                 Some(card) => format!("draw {}", card.repr()),
@@ -106,7 +106,7 @@ impl Action {
                     numeric_tricks[value as usize].push(card);
                 }
                 // add any joker tricks
-                Card::Joker { id: _ } => actions.push(Action::Trick(vec![card])),
+                Card::Joker { .. } => actions.push(Action::Trick(vec![card])),
             };
         }
 
@@ -144,7 +144,7 @@ impl Action {
                     Card::SuitCard { suit, value },
                     Card::SuitCard {
                         suit: second_card_suit,
-                        value: _,
+                        ..
                     },
                 ) = (card_vec[0], card_vec[1])
                 {

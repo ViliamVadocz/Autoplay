@@ -48,8 +48,8 @@ impl StruggleBot for MyBot {
                     _ => None,
                 });
             Ok(match possible_draw {
-                Some(draw) => draw.to_message(),
-                None => highest_score.to_message(),
+                Some(draw) => draw.convert_to_message(),
+                None => highest_score.convert_to_message(),
             })
         }
     }
@@ -61,6 +61,6 @@ fn get_user_input() -> Result<String> {
     let stdin = io::stdin();
     let mut handle = stdin.lock();
     handle.read_to_string(&mut buffer)?;
-    println!("");
+    println!();
     Ok(buffer)
 }

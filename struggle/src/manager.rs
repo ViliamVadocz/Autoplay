@@ -10,7 +10,7 @@ use crate::{
 };
 
 pub fn run_bot<B: StruggleBot>(mut bot: B, address: &str) -> Result<()> {
-    let (mut stream, setup_msg) = connect(bot.get_name(), address)?;
+    let (stream, setup_msg) = connect(bot.get_name(), address)?;
     let bot_index = setup_msg.index;
     bot.set_index(bot_index);
     let mut game = Game::new(setup_msg.players);
@@ -25,7 +25,7 @@ pub fn run_bot<B: StruggleBot>(mut bot: B, address: &str) -> Result<()> {
                 // check if server expects a response after error
                 if [101, 102, 103, 104, 105, 300, 301, 302].contains(&message.error_code) {
                     let action = bot.generate_move(&game)?;
-                    send(&mut stream, action)?;
+                    send(&stream, action)?;
                 }
             }
 
@@ -53,7 +53,7 @@ pub fn run_bot<B: StruggleBot>(mut bot: B, address: &str) -> Result<()> {
                 if game.has_moves && game.current_player_index == bot_index {
                     println!("hand: {:?}", &game.my_hand);
                     let action = bot.generate_move(&game)?;
-                    send(&mut stream, action)?;
+                    send(&stream, action)?;
                 }
             }
         };
@@ -67,7 +67,7 @@ fn connect(name: &str, address: &str) -> Result<(TcpStream, SetupMessage)> {
     println!("connected!");
 
     // set name
-    stream.write(format!("join \"{}\"\n", name).as_bytes())?;
+    stream.write_all(format!("join \"{}\"\n", name).as_bytes())?;
 
     // wait for setup message once a game starts
     let response = receive(&stream)?;
