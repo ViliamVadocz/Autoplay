@@ -1,5 +1,5 @@
-use std::io::Result;
 use crate::game::Game;
+use std::io::Result;
 
 pub trait StruggleBot {
     fn get_name(&self) -> &str;

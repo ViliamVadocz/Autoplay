@@ -28,15 +28,15 @@ pub fn get_error_name(code: i32) -> &'static str {
         103 => "NotInHand",
         104 => "NotValidTrick",
         105 => "HandIsFull",
-        
+
         200 => "GameIsNotRunning",
         201 => "YouAreNotInGame",
-        
+
         300 => "UnexpectedMessage",
         301 => "InvalidMessage",
         302 => "UnknownAction",
         303 => "NoPlayerName",
-        _ => "???"
+        _ => "???",
     }
 }
 
@@ -47,7 +47,6 @@ pub struct SetupMessage {
     pub index: usize,
     pub players: Vec<String>,
 }
-
 
 // game
 #[derive(Debug, Serialize, Deserialize)]

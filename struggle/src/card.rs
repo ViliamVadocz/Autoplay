@@ -1,9 +1,9 @@
-use std::{fmt, char};
+use std::{char, fmt};
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Card {
-    SuitCard {value: u32, suit: Suit},
-    Joker {id: u32}
+    SuitCard { value: u32, suit: Suit },
+    Joker { id: u32 },
 }
 
 impl Card {
@@ -15,7 +15,7 @@ impl Card {
         // test if joker
         if suit_char == 'J' {
             let id = num_char.to_digit(10).unwrap();
-            return Card::Joker {id};
+            return Card::Joker { id };
         }
         // otherwise first char is suit
         let suit = Suit::from(suit_char).unwrap();
@@ -27,28 +27,26 @@ impl Card {
                 'Q' => 12,
                 'K' => 13,
                 'A' => 14,
-                _ => 0
-            }
+                _ => 0,
+            },
         };
-        Card::SuitCard {value, suit}
+        Card::SuitCard { value, suit }
     }
 
     pub fn repr(self) -> String {
         match self {
-            Card::SuitCard {value, suit} => {
+            Card::SuitCard { value, suit } => {
                 let value_char = match value {
                     10 => 'X',
                     11 => 'J',
                     12 => 'Q',
                     13 => 'K',
                     14 => 'A',
-                    i => char::from_digit(i, 10).unwrap()
+                    i => char::from_digit(i, 10).unwrap(),
                 };
                 format!("{0}{1}", value_char, suit.repr())
-            },
-            Card::Joker {id} => {
-                format!("J{}", id)
             }
+            Card::Joker { id } => format!("J{}", id),
         }
     }
 }
@@ -56,20 +54,19 @@ impl Card {
 impl fmt::Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let output = match self {
-            Card::SuitCard {suit, value} => format!("{0} {1}", suit, value),
-            Card::Joker {id} => format!("Joker {}", id)
+            Card::SuitCard { suit, value } => format!("{0} {1}", suit, value),
+            Card::Joker { id } => format!("Joker {}", id),
         };
         write!(f, "{}", output)
     }
 }
-
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Suit {
     Club,
     Heart,
     Spade,
-    Diamond
+    Diamond,
 }
 
 impl Suit {
@@ -79,7 +76,7 @@ impl Suit {
             'H' => Ok(Suit::Heart),
             'S' => Ok(Suit::Spade),
             'D' => Ok(Suit::Diamond),
-            _ => Err("unknown suit")
+            _ => Err("unknown suit"),
         }
     }
 
@@ -88,7 +85,7 @@ impl Suit {
             Suit::Club => 'C',
             Suit::Heart => 'H',
             Suit::Spade => 'S',
-            Suit::Diamond => 'D'
+            Suit::Diamond => 'D',
         }
     }
 }
@@ -99,7 +96,7 @@ impl fmt::Display for Suit {
             Suit::Club => "Club",
             Suit::Heart => "Heart",
             Suit::Spade => "Spade",
-            Suit::Diamond => "Diamond"
+            Suit::Diamond => "Diamond",
         };
         write!(f, "{}", output)
     }

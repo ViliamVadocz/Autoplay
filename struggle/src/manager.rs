@@ -1,16 +1,12 @@
 use std::{
-    io::{BufReader, Error, ErrorKind, Result, prelude::*},
-    net::TcpStream
+    io::{prelude::*, BufReader, Error, ErrorKind, Result},
+    net::TcpStream,
 };
 
 use crate::{
-    messages::{
-        get_error_name,
-        SetupMessage,
-        Message
-    },
+    bot::StruggleBot,
     game::Game,
-    bot::StruggleBot
+    messages::{get_error_name, Message, SetupMessage},
 };
 
 pub fn run_bot<B: StruggleBot>(mut bot: B, address: &str) -> Result<()> {
@@ -18,7 +14,6 @@ pub fn run_bot<B: StruggleBot>(mut bot: B, address: &str) -> Result<()> {
     let bot_index = setup_msg.index;
     bot.set_index(bot_index);
     let mut game = Game::new(setup_msg.players);
-    
 
     loop {
         // receive response
@@ -32,9 +27,14 @@ pub fn run_bot<B: StruggleBot>(mut bot: B, address: &str) -> Result<()> {
                     let action = bot.generate_move(&game)?;
                     send(&mut stream, action)?;
                 }
-            },
+            }
 
-            Message::Setup(_) => return Err(Error::new(ErrorKind::InvalidData, "received unexpected \"setup\" message")),
+            Message::Setup(_) => {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "received unexpected \"setup\" message",
+                ))
+            }
 
             Message::GameOver(message) => {
                 let winner = message.winner;
@@ -43,8 +43,8 @@ pub fn run_bot<B: StruggleBot>(mut bot: B, address: &str) -> Result<()> {
                 for player in message.game_state.players.iter() {
                     println!("{0}: {1}", player.name, player.score);
                 }
-                return Ok(())
-            },
+                return Ok(());
+            }
 
             Message::GameInfo(message) => {
                 game.update(message);
@@ -77,7 +77,10 @@ fn connect(name: &str, address: &str) -> Result<(TcpStream, SetupMessage)> {
     } else {
         // invalid response type
         println!("{:?}", response);
-        Err(Error::new(ErrorKind::InvalidData, "the type received was not \"setup\""))
+        Err(Error::new(
+            ErrorKind::InvalidData,
+            "the type received was not \"setup\"",
+        ))
     }
 }
 
