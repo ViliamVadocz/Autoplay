@@ -4,6 +4,7 @@
 
 mod game;
 mod moves;
+// mod tree_search;
 
 use game::{Game, Status};
 use moves::possible_moves;
@@ -36,10 +37,12 @@ fn main() {
 //   [X] detecting game finish
 
 // [ ] make a tree search func
-//   [ ] evaluate possible board
-//   [ ] generate possible moves
-//   [ ] evaluate probable "goodness" and add to stack
-//   [ ] try move and tree search
+//   [X] generate possible moves
+//   [ ] estimate probable "goodness" of moves and add to stack
+//   [ ] pop best looking move from stack and try it
+//   [X] generate possible boards
+//   [ ] evaluate board state?
+
 
 // [ ] hardcoded bot
 //   [ ] static board evaluation

@@ -72,9 +72,28 @@ fn explore(branch: &Move, pos: usize, neighbours_of: &[Vec<usize>], moves: &mut 
     }
 }
 
+pub fn possible_boards(board: &[u16; 25], my_move: &Move) -> Vec<[u16; 25]> {
+    let value = board[my_move.end];
+    let result = value * (1 + my_move.used.len() as u16);
+    let n = my_move.used.len() as u32;
+    // could fail if a move of length > 20 arrived
+    let mut starter_board = *board;
+    starter_board[my_move.end] = result;
+    (0..3_u32.pow(n))
+        .map(|i| {
+            let mut new_board = starter_board;
+            let values = (0..n).map(|x| i / 3_u32.pow(x) % 3 + 1);
+            for (&pos, val) in my_move.used.iter().zip(values) {
+                new_board[pos] = val as u16;
+            }
+            new_board
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::moves::possible_moves;
+    use crate::moves::{possible_boards, possible_moves, Move};
 
     #[test]
     fn dead_board() {
@@ -83,7 +102,7 @@ mod tests {
             *tile = (i as u16 % 2) + 1;
         }
         let moves = possible_moves(&chequerboard);
-        assert_eq!(moves.len(), 0)
+        assert_eq!(moves.len(), 0);
     }
 
     #[test]
@@ -94,12 +113,24 @@ mod tests {
             *tile = (layer % 3) + 1;
         }
         let moves = possible_moves(&layers);
-        assert_eq!(moves.len(), 100)
+        assert_eq!(moves.len(), 100);
     }
 
     #[test]
     fn all_ones_board() {
         let moves = possible_moves(&[1; 25]);
-        assert_eq!(moves.len(), 3060392)
+        assert_eq!(moves.len(), 3060392);
+    }
+
+    #[test]
+    fn possible_board_test() {
+        let board = [1; 25];
+        let mut my_move = Move::from(0);
+        let num_covered = 10;
+        for i in 1..num_covered {
+            my_move.used.insert(i);
+        }
+        let boards = possible_boards(&board, &my_move);
+        assert_eq!(boards.len(), 3_usize.pow((num_covered - 1) as u32));
     }
 }
