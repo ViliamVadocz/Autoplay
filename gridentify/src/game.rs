@@ -1,21 +1,21 @@
-use rand::prelude::ThreadRng;
 use rand::distributions::{Distribution, Uniform};
+use rand::prelude::ThreadRng;
 
 use crate::moves::Move;
 
 #[derive(Debug)]
 pub enum Status {
     Running,
-    Ended
+    Ended,
 }
 
 #[derive(Debug)]
 pub struct Game {
     pub board: [u16; 25],
-    rng: ThreadRng,
-    range: Uniform<u16>,
     pub score: u32,
     pub status: Status,
+    rng: ThreadRng,
+    range: Uniform<u16>,
 }
 
 impl Game {
@@ -28,26 +28,25 @@ impl Game {
         }
         Game {
             board,
-            rng,
-            range,
             score: 0,
             status: Game::check_status(&board),
+            rng,
+            range,
         }
     }
 
     pub fn from(board: [u16; 25]) -> Game {
         Game {
             board,
-            rng: rand::thread_rng(),
-            range: Uniform::new_inclusive(1, 3),
             score: 0,
             status: Game::check_status(&board),
+            rng: rand::thread_rng(),
+            range: Uniform::new_inclusive(1, 3),
         }
     }
 
     fn generate_tile(&mut self) -> u16 {
-        let x = self.range.sample(&mut self.rng);
-        x
+        self.range.sample(&mut self.rng)
     }
 
     pub fn make_move(&mut self, my_move: Move) {
@@ -55,7 +54,9 @@ impl Game {
         let result = value * (1 + my_move.used.len() as u16);
         for pos in my_move.used.into_iter() {
             // verification
-            if self.board[pos] != value {panic!("invalid move attempted")}
+            if self.board[pos] != value {
+                panic!("invalid move attempted")
+            }
             // generate new tiles
             self.board[pos] = self.generate_tile();
         }
@@ -69,10 +70,22 @@ impl Game {
             let x = i % 5;
             let y = i / 5;
             let value = board[i];
-            if x < 4 && value == board[i + 1] {return Status::Running;} // right
-            if y < 4 && value == board[i + 5] {return Status::Running;} // down
-            if x > 0 && value == board[i - 1] {return Status::Running;} // left
-            if y > 0 && value == board[i - 5] {return Status::Running;} // up
+            // right
+            if x < 4 && value == board[i + 1] {
+                return Status::Running;
+            }
+            // down
+            if y < 4 && value == board[i + 5] {
+                return Status::Running;
+            }
+            // left
+            if x > 0 && value == board[i - 1] {
+                return Status::Running;
+            }
+            // up
+            if y > 0 && value == board[i - 5] {
+                return Status::Running;
+            }
         }
         Status::Ended
     }

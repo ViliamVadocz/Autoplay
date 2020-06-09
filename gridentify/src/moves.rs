@@ -15,17 +15,29 @@ impl Move {
     }
 }
 
-pub fn get_neighbours_of(board: &[u16; 25]) -> Vec<Vec<usize>> {
+fn get_neighbours_of(board: &[u16; 25]) -> Vec<Vec<usize>> {
     let mut neighbours_of = Vec::new();
     for i in 0..25 {
         let x = i % 5;
         let y = i / 5;
         let value = board[i];
         let mut neighbours = Vec::new();
-        if x < 4 && value == board[i + 1] {neighbours.push(i + 1);} // right
-        if y < 4 && value == board[i + 5] {neighbours.push(i + 5);} // down
-        if x > 0 && value == board[i - 1] {neighbours.push(i - 1);} // left
-        if y > 0 && value == board[i - 5] {neighbours.push(i - 5);} // up
+        // right
+        if x < 4 && value == board[i + 1] {
+            neighbours.push(i + 1);
+        }
+        // down
+        if y < 4 && value == board[i + 5] {
+            neighbours.push(i + 5);
+        }
+        // left
+        if x > 0 && value == board[i - 1] {
+            neighbours.push(i - 1);
+        }
+        // up
+        if y > 0 && value == board[i - 5] {
+            neighbours.push(i - 5);
+        }
         neighbours_of.push(neighbours);
     }
     neighbours_of
@@ -37,7 +49,7 @@ pub fn possible_moves(board: &[u16; 25]) -> Vec<Move> {
 
     // start moves at each tile
     for i in 0..25 {
-        if neighbours_of[i].len() != 0 {
+        if !neighbours_of[i].is_empty() {
             explore(&Move::from(i), i, &neighbours_of, &mut moves)
         }
     }
@@ -45,7 +57,7 @@ pub fn possible_moves(board: &[u16; 25]) -> Vec<Move> {
     moves
 }
 
-fn explore(branch: &Move, pos: usize, neighbours_of: &Vec<Vec<usize>>, moves: &mut Vec<Move>) {
+fn explore(branch: &Move, pos: usize, neighbours_of: &[Vec<usize>], moves: &mut Vec<Move>) {
     // try expanding into each neighbour
     for &neighbour in neighbours_of[pos].iter() {
         // check that this tile is unexplored by this move
