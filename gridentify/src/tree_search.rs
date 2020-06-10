@@ -1,7 +1,49 @@
-use crate::moves::{Move, possible_moves, possible_boards};
+use crate::moves::{possible_boards, possible_moves, Move};
 
-fn board_eval(board: &[u16; 25]) -> f32 {
-    0.0
+fn board_eval(board: &[u16; 25]) -> u16 {
+    // temporary
+    board.iter().sum::<u16>()
+}
+
+pub fn const_depth_search(board: &[u16; 25], depth: u8) -> Move {
+    let moves = possible_moves(board);
+    moves
+        .into_iter()
+        .max_by_key(|my_move| {
+            let boards = possible_boards(board, my_move);
+            let board_evals = boards
+                .into_iter()
+                .map(|new_board| full_tree_search(&new_board, 1, depth));
+            match board_evals.min() {
+                Some(score) => score,
+                None => 0,
+            }
+        })
+        .unwrap()
+}
+
+fn full_tree_search(board: &[u16; 25], current_depth: u8, max_depth: u8) -> u16 {
+    if current_depth >= max_depth {
+        return board_eval(board);
+    }
+    let moves = possible_moves(board);
+    if moves.is_empty() {
+        return 0;
+    }
+    moves
+        .into_iter()
+        .map(|my_move| {
+            let boards = possible_boards(board, &my_move);
+            let board_evals = boards
+                .into_iter()
+                .map(|new_board| full_tree_search(&new_board, current_depth + 1, max_depth));
+            match board_evals.min() {
+                Some(score) => score,
+                None => 0,
+            }
+        })
+        .max()
+        .unwrap()
 }
 
 // fn choose_move(board: &[u16; 25]) -> Move {
