@@ -5,13 +5,11 @@ use rand::prelude::ThreadRng;
 
 use crate::moves::Move;
 
-#[derive(Debug)]
 pub enum Status {
     Running,
     Ended,
 }
 
-#[derive(Debug)]
 pub struct Game {
     pub board: [u16; 25],
     pub score: u32,

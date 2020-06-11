@@ -1,8 +1,9 @@
-use bitmaps::Bitmap;
 use std::fmt;
+
+use bitmaps::Bitmap;
 use typenum::U25;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Move {
     pub end: usize,
     pub used: Bitmap<U25>,
@@ -43,6 +44,11 @@ fn get_neighbours_of(board: &[u16; 25]) -> Vec<Vec<usize>> {
         let x = i % 5;
         let y = i / 5;
         let value = board[i];
+        // 0 never appears so we use it for off-limits tiles
+        if value == 0 {
+            neighbours_of.push(Vec::new());
+            continue;
+        }
         let mut neighbours = Vec::new();
         // right
         if x < 4 && value == board[i + 1] {
@@ -94,25 +100,37 @@ fn explore(branch: &Move, pos: usize, neighbours_of: &[Vec<usize>], moves: &mut 
     }
 }
 
-pub fn possible_boards(board: &[u16; 25], my_move: &Move) -> Vec<[u16; 25]> {
+pub fn possible_boards(mut board: [u16; 25], my_move: &Move) -> Vec<[u16; 25]> {
     let value = board[my_move.end];
     let result = value * (1 + my_move.used.len() as u16);
     let n = my_move.used.len() as u32;
     // could fail if a move of length > 20 arrived
-    let mut starter_board = *board;
-    starter_board[my_move.end] = result;
+    board[my_move.end] = result;
     (0..3_u32.pow(n))
         .map(|i| {
-            let mut new_board = starter_board;
+            let mut new_board = board;
             let mut values = (0..n).map(|x| i / 3_u32.pow(x) % 3 + 1);
-            for (pos, item) in new_board.iter_mut().enumerate() {
+            for (pos, tile) in new_board.iter_mut().enumerate() {
                 if my_move.used.get(pos) {
-                    *item = values.next().unwrap() as u16;
+                    *tile = values.next().unwrap() as u16;
                 }
             }
             new_board
         })
         .collect()
+}
+
+/// make move, but place marker zeroes where newly generated tiles would be to make them off-limits
+pub fn get_fake_board(mut board: [u16; 25], my_move: &Move) -> [u16; 25] {
+    let value = board[my_move.end];
+    let result = value * (1 + my_move.used.len() as u16);
+    board[my_move.end] = result;
+    for (pos, tile) in board.iter_mut().enumerate() {
+        if my_move.used.get(pos) {
+            *tile = 0;
+        }
+    }
+    board
 }
 
 #[cfg(test)]
@@ -154,7 +172,7 @@ mod tests {
         for i in 1..num_covered {
             my_move.used.set(i, true);
         }
-        let boards = possible_boards(&board, &my_move);
+        let boards = possible_boards(board, &my_move);
         assert_eq!(boards.len(), 3_usize.pow((num_covered - 1) as u32));
     }
 }

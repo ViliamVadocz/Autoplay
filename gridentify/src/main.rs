@@ -7,14 +7,15 @@ mod moves;
 mod tree_search;
 
 use game::{Game, Status};
-use tree_search::const_depth_search;
+// use tree_search::full_const_depth_search;
+use tree_search::limited_const_depth_search;
 
 fn main() {
     let mut game = Game::new();
     println!("{}", game);
 
     loop {
-        let my_move = const_depth_search(&game.board, 3);
+        let my_move = limited_const_depth_search(&game.board, 5);
         println!("{}", my_move);
         game.make_move(my_move);
         println!("{}", game);
