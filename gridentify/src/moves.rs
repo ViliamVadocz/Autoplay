@@ -1,17 +1,39 @@
-use std::collections::HashSet;
+use bitmaps::Bitmap;
+use std::fmt;
+use typenum::U25;
 
 #[derive(Debug, Clone)]
 pub struct Move {
     pub end: usize,
-    pub used: HashSet<usize>,
+    pub used: Bitmap<U25>,
 }
 
 impl Move {
     fn from(end: usize) -> Move {
         Move {
             end,
-            used: HashSet::new(),
+            used: Bitmap::new(),
         }
+    }
+}
+
+impl fmt::Display for Move {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut repr = String::new();
+        for pos in 0..25 {
+            repr.push(' ');
+            if pos == self.end {
+                repr.push('X');
+            } else if self.used.get(pos) {
+                repr.push('*');
+            } else {
+                repr.push('.');
+            }
+            if pos % 5 == 4 {
+                repr.push('\n');
+            }
+        }
+        write!(f, "{}", repr)
     }
 }
 
@@ -61,10 +83,10 @@ fn explore(branch: &Move, pos: usize, neighbours_of: &[Vec<usize>], moves: &mut 
     // try expanding into each neighbour
     for &neighbour in neighbours_of[pos].iter() {
         // check that this tile is unexplored by this move
-        if !(branch.end == neighbour || branch.used.contains(&neighbour)) {
+        if !(branch.end == neighbour || branch.used.get(neighbour)) {
             // branch off
             let mut new_branch = branch.clone();
-            new_branch.used.insert(neighbour);
+            new_branch.used.set(neighbour, true);
             // recursively explore
             explore(&new_branch, neighbour, neighbours_of, moves);
             moves.push(new_branch);
@@ -82,9 +104,11 @@ pub fn possible_boards(board: &[u16; 25], my_move: &Move) -> Vec<[u16; 25]> {
     (0..3_u32.pow(n))
         .map(|i| {
             let mut new_board = starter_board;
-            let values = (0..n).map(|x| i / 3_u32.pow(x) % 3 + 1);
-            for (&pos, val) in my_move.used.iter().zip(values) {
-                new_board[pos] = val as u16;
+            let mut values = (0..n).map(|x| i / 3_u32.pow(x) % 3 + 1);
+            for (pos, item) in new_board.iter_mut().enumerate() {
+                if my_move.used.get(pos) {
+                    *item = values.next().unwrap() as u16;
+                }
             }
             new_board
         })
@@ -128,7 +152,7 @@ mod tests {
         let mut my_move = Move::from(0);
         let num_covered = 10;
         for i in 1..num_covered {
-            my_move.used.insert(i);
+            my_move.used.set(i, true);
         }
         let boards = possible_boards(&board, &my_move);
         assert_eq!(boards.len(), 3_usize.pow((num_covered - 1) as u32));

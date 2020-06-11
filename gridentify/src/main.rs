@@ -7,18 +7,17 @@ mod moves;
 mod tree_search;
 
 use game::{Game, Status};
-use moves::possible_moves;
 use tree_search::const_depth_search;
 
 fn main() {
     let mut game = Game::new();
-    println!("{:?}", game);
+    println!("{}", game);
 
     loop {
-        let my_move = const_depth_search(&game.board, 2);
-        println!("{:?}", my_move);
+        let my_move = const_depth_search(&game.board, 3);
+        println!("{}", my_move);
         game.make_move(my_move);
-        println!("{:?}", game);
+        println!("{}", game);
         if let Status::Ended = game.status {
             println!("score: {}", game.score);
             break;
@@ -47,10 +46,16 @@ fn main() {
 // [ ] optimizations
 //   [ ] don't generate all possible boards
 //     [ ] just pretend newly generated tiles are off-limits
-//     [ ] use wildcards to reduce branching factor and allow for planning with 
+//     [ ] use wildcards to reduce branching factor and allow for planning with
 //   [ ] don't look for moves of all lengths
 //     [ ] max length 8?
 //     [ ] 5, 7 do not not seem useful since prime
+//   [X] moves can be smaller
+//     [X] use a bitmap to repr used tiles
+
+// [ ] quality of life
+//   [X] add nice printing of board and moves
+//   [ ] user input?
 
 // [ ] hardcoded bot
 //   [ ] static board evaluation
