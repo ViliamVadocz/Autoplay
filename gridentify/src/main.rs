@@ -37,8 +37,10 @@ fn main() {
 
 // [ ] make a tree search func
 //   [X] func for generating all possible boards
-//   [X] const depth tree search
+//   [ ] const depth tree search
 //     [X] explore all boards for all moves
+//     [X] explore all fake boards for all moves (problem is that it might seem like we died when we didn't)
+//     [ ] combination where we explore fake when many moves, but all when few possibilities exist
 //   [ ] depth first exploration
 //     [ ] estimate probable "goodness" of moves and add to stack
 //     [ ] pop best looking move from stack and try it
@@ -46,7 +48,7 @@ fn main() {
 
 // [ ] optimizations
 //   [ ] don't generate all possible boards
-//     [ ] just pretend newly generated tiles are off-limits
+//     [X] just pretend newly generated tiles are off-limits
 //     [ ] use wildcards to reduce branching factor and allow for planning with
 //   [ ] don't look for moves of all lengths
 //     [ ] max length 8?
@@ -70,3 +72,7 @@ fn main() {
 //   [ ] amplification & distillation
 //     [ ] use more processing to get better moves
 //     [ ] train on amplified network
+
+// [ ] connect to Hytak's server
+//   [ ] connection manager
+//   [ ] multiple games at once?
