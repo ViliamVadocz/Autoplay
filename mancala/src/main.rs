@@ -1,3 +1,5 @@
+extern crate ordered_float;
+
 mod game;
 mod tree_search;
 
@@ -14,7 +16,7 @@ fn main() -> Result<(), &'static str> {
         println!("turn number: {}", turn_num);
         // let moves = game.possible_moves();
         // println!("possible moves: {:?}", moves);
-        let m = tree_search(&game, 10)?;
+        let m = tree_search(&game, 12)?;
         println!("chosen move: {}", m);
         game.make_move(m)?;
         turn_num += 1;

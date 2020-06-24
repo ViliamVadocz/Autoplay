@@ -1,4 +1,5 @@
 use crate::game::{Game, Player, Status};
+use ordered_float::OrderedFloat;
 use std::i8;
 
 // First player = positive
@@ -21,36 +22,20 @@ fn static_eval(game: Game) -> Result<f64, &'static str> {
 }
 
 pub fn tree_search(game: &Game, depth: u8) -> Result<usize, &'static str> {
-    let moves = game.possible_moves();
-    let evals = moves
-        .iter()
-        .map(|&my_move: &usize| {
-            let mut imaginary_game = game.clone();
-            imaginary_game.make_move(my_move)?;
-            recursive_tree_search(imaginary_game, 1, depth)
-        })
-        .collect::<Result<Vec<_>, _>>()?
-        .into_iter()
-        .enumerate();
-    // pick best move
-    let best_move = match game.current_player {
-        Player::First => moves.get(
-            evals
-                .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-                .unwrap()
-                .0,
-        ),
-        Player::Second => moves.get(
-            evals
-                .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-                .unwrap()
-                .0,
-        ),
+    // make closure
+    let eval_closure = |&my_move: &usize| {
+        let mut imaginary_game = game.clone();
+        imaginary_game.make_move(my_move)?;
+        recursive_tree_search(imaginary_game, 1, depth).map(OrderedFloat)
     };
-    match best_move {
-        Some(m) => Ok(*m),
-        None => Err("cannot use tree_search for a game with no moves"),
+
+    // pick best move
+    let moves = game.possible_moves().into_iter();
+    match game.current_player {
+        Player::First => moves.max_by_key(eval_closure),
+        Player::Second => moves.min_by_key(eval_closure),
     }
+    .ok_or("cannot use tree_search for a game with no moves")
 }
 
 fn recursive_tree_search(game: Game, depth: u8, max_depth: u8) -> Result<f64, &'static str> {
@@ -65,19 +50,16 @@ fn recursive_tree_search(game: Game, depth: u8, max_depth: u8) -> Result<f64, &'
     }
 
     // explore
-    let scores = moves
-        .into_iter()
-        .map(|my_move| {
-            let mut imaginary_game = game.clone();
-            imaginary_game.make_move(my_move)?;
-            recursive_tree_search(imaginary_game, depth + 1, max_depth)
-        })
-        .collect::<Result<Vec<_>, _>>()?
-        .into_iter();
+    let scores = moves.into_iter().map(|my_move| {
+        let mut imaginary_game = game.clone();
+        imaginary_game.make_move(my_move)?;
+        recursive_tree_search(imaginary_game, depth + 1, max_depth).map(OrderedFloat)
+    });
 
     match game.current_player {
-        Player::First => scores.max_by(|a, b| a.partial_cmp(b).unwrap()),
-        Player::Second => scores.min_by(|a, b| a.partial_cmp(b).unwrap()),
+        Player::First => scores.max(),
+        Player::Second => scores.min(),
     }
-    .ok_or("could not determine the max or min score in tree search")
+    .ok_or("could not determine the max or min score in tree search")?
+    .map(|val| val.into_inner())
 }
