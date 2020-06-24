@@ -22,15 +22,6 @@ pub struct Game {
 
 impl fmt::Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Status::Ended = self.status {
-            let msg = match self.get_winner() {
-                Some((Player::First, (p1, p2))) => format!("[{} : {}] First player won", p1, p2),
-                Some((Player::Second, (p1, p2))) => format!("[{} : {}] Second player won", p1, p2),
-                None => "It was a draw!".to_string(),
-            };
-            return write!(f, "{}", msg);
-        }
-
         let mut repr = String::new();
 
         // second player
@@ -61,10 +52,25 @@ impl fmt::Display for Game {
             repr.push_str(&num.to_string());
         }
 
-        // who's turn is it
-        match self.current_player {
-            Player::First => repr.push_str("\n--- First player's turn  ---"),
-            Player::Second => repr.push_str("\n--- Second player's turn ---"),
+        // announce score or turn
+        repr.push('\n');
+        match self.status {
+            Status::Ended => match self.get_winner() {
+                Some((Player::First, (p1, p2))) => {
+                    repr.push_str(&format!("[{} : {}] First player won", p1, p2))
+                }
+                Some((Player::Second, (p1, p2))) => {
+                    repr.push_str(&format!("[{} : {}] Second player won", p1, p2))
+                }
+                None => repr.push_str("It was a draw!"),
+            },
+            Status::Running => {
+                // who's turn is it
+                match self.current_player {
+                    Player::First => repr.push_str("--- First player's turn  ---"),
+                    Player::Second => repr.push_str("--- Second player's turn ---"),
+                }
+            }
         }
 
         write!(f, "{}", repr)
@@ -90,6 +96,10 @@ impl Game {
     }
 
     pub fn make_move(&mut self, pit: usize) -> Result<(), &'static str> {
+        if let Status::Ended = self.status {
+            return Err("you cannot make a move in a game that has ended");
+        }
+
         if pit > 6 {
             return Err("pit out of range");
         }

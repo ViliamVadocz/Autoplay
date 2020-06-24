@@ -3,26 +3,32 @@ extern crate ordered_float;
 mod game;
 mod tree_search;
 
-use game::{Game, Status};
+use game::{Game, Status, Player};
 use tree_search::tree_search;
+
+const DEBUG_PRINT: bool = false;
 
 fn main() -> Result<(), &'static str> {
     let mut game = Game::new(4)?;
     let mut turn_num = 0;
 
-    println!("### Game started! ###");
     while let Status::Running = game.status {
         println!("{}", game);
-        println!("turn number: {}", turn_num);
-        // let moves = game.possible_moves();
-        // println!("possible moves: {:?}", moves);
-        let m = tree_search(&game, 12)?;
-        println!("chosen move: {}", m);
+        let moves = game.possible_moves();
+        let m = match game.current_player {
+            Player::First => tree_search(&game, 4)?,
+            Player::Second => tree_search(&game, 8)?,
+        };
         game.make_move(m)?;
+
         turn_num += 1;
+        if DEBUG_PRINT {
+            println!("turn number: {}", turn_num);
+            println!("possible moves: {:?}", moves);
+            println!("chosen move: {}", m);
+        }
     }
 
-    println!("###  Game ended!  ###");
     println!("{}", game);
 
     Ok(())
