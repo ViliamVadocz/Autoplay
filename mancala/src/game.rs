@@ -97,19 +97,17 @@ impl Game {
         let (mut stones, mut index) = match self.current_player {
             Player::First => {
                 let stones = self.board[pit];
-                if stones == 0 {
-                    return Err("The selected pit is empty");
-                }
                 (stones, pit)
             }
             Player::Second => {
                 let stones = self.board[7 + pit];
-                if stones == 0 {
-                    return Err("The selected pit is empty");
-                }
                 (stones, 7 + pit)
             }
         };
+
+        if stones == 0 {
+            return Err("The selected pit is empty");
+        }
 
         // take stones out
         self.board[index] = 0;
