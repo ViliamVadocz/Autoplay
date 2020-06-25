@@ -6,7 +6,7 @@ pub trait Agent {
     /// First player = positive
     /// Second player = negative
     fn evaluate_game(&self, game: Game) -> Result<f64, &'static str>;
-    
+
     fn tree_search(&self, game: &Game, depth: u8) -> Result<usize, &'static str> {
         // make closure
         let eval_closure = |&my_move: &usize| {
@@ -20,7 +20,7 @@ pub trait Agent {
             )
             .map(OrderedFloat)
         };
-    
+
         // pick best move
         let moves = game.possible_moves().into_iter();
         match game.current_player {
@@ -30,6 +30,7 @@ pub trait Agent {
         .ok_or("cannot use tree_search for a game with no moves")
     }
 
+    // BUG HERE PROBABLY
     // alpha: best explored option along path to root for maximizer
     // beta: best explored option along path to root for minimizer
     fn alpha_beta_minimax(
@@ -43,18 +44,20 @@ pub trait Agent {
         if depth == 0 {
             return self.evaluate_game(game);
         }
-    
+
         // game ended
         let moves = game.possible_moves();
         if moves.is_empty() {
             return self.evaluate_game(game);
         }
-    
+
         // explore
         for my_move in moves.into_iter() {
             let mut imaginary_game = game.clone();
             imaginary_game.make_move(my_move)?;
-            let score = self.alpha_beta_minimax(imaginary_game, alpha, beta, depth - 1).map(OrderedFloat)?;
+            let score = self
+                .alpha_beta_minimax(imaginary_game, alpha, beta, depth - 1)
+                .map(OrderedFloat)?;
             match game.current_player {
                 Player::First => {
                     if score > alpha {
@@ -76,7 +79,7 @@ pub trait Agent {
                 }
             };
         }
-    
+
         Ok(match game.current_player {
             Player::First => alpha,
             Player::Second => beta,
@@ -98,7 +101,7 @@ impl Agent for SimpleAgent {
                 None => 0,
             },
         } as f64;
-        
+
         // handle nan
         if eval.is_nan() {
             Err("encountered nan")

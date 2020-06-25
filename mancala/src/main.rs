@@ -3,13 +3,13 @@ extern crate rand;
 extern crate rand_distr;
 extern crate rulinalg;
 
+mod agent;
 mod game;
 mod network;
-mod agent;
 
-use game::{Game, Player, Status};
-use network::{Network, rect_lin_unit};
 use agent::{Agent, SimpleAgent};
+use game::{Game, Player, Status};
+use network::{rect_lin_unit, Network};
 
 const DEBUG_PRINT: bool = false;
 

@@ -1,10 +1,10 @@
-use crate::game::Game;
 use crate::agent::Agent;
+use crate::game::Game;
 
-use std::cmp::Ordering::Less;
 use rand;
 use rand_distr::{Distribution, Open01};
 use rulinalg::{matrix::Matrix, vector::Vector};
+use std::cmp::Ordering::Less;
 
 pub struct Network {
     weights: Vec<Matrix<f64>>,
@@ -13,8 +13,19 @@ pub struct Network {
 }
 
 impl Network {
-    pub fn from(layer_sizes: &[usize], activation_func: fn(f64) -> f64) -> Result<Network, &'static str> {
-        if *layer_sizes.first().ok_or("a network with no nodes is not a network")? != 112 && *layer_sizes.last().ok_or("a network with no nodes is not a network")? != 1 {
+    pub fn from(
+        layer_sizes: &[usize],
+        activation_func: fn(f64) -> f64,
+    ) -> Result<Network, &'static str> {
+        if *layer_sizes
+            .first()
+            .ok_or("a network with no nodes is not a network")?
+            != 112
+            && *layer_sizes
+                .last()
+                .ok_or("a network with no nodes is not a network")?
+                != 1
+        {
             return Err("network should have 112 input nodes (board repr as bits) and 1 output node (static eval)");
         }
         let len = layer_sizes.len();
