@@ -1,6 +1,6 @@
 use crate::game::{Game, Player, Status};
 use ordered_float::OrderedFloat;
-use std::i8;
+use std::{i8, f64};
 
 // First player = positive
 // Second player = negative
@@ -26,7 +26,7 @@ pub fn tree_search(game: &Game, depth: u8) -> Result<usize, &'static str> {
     let eval_closure = |&my_move: &usize| {
         let mut imaginary_game = game.clone();
         imaginary_game.make_move(my_move)?;
-        recursive_tree_search(imaginary_game, 1, depth).map(OrderedFloat)
+        alpha_beta_minimax(imaginary_game, OrderedFloat(f64::NEG_INFINITY), OrderedFloat(f64::INFINITY), depth).map(OrderedFloat)
     };
 
     // pick best move
@@ -38,28 +38,50 @@ pub fn tree_search(game: &Game, depth: u8) -> Result<usize, &'static str> {
     .ok_or("cannot use tree_search for a game with no moves")
 }
 
-fn recursive_tree_search(game: Game, depth: u8, max_depth: u8) -> Result<f64, &'static str> {
-    // end recursion
-    if depth >= max_depth {
+// alpha: best explored option along path to root for maximizer
+// beta: best explored option along path to root for minimizer
+fn alpha_beta_minimax(game: Game, mut alpha: OrderedFloat<f64>, mut beta: OrderedFloat<f64>, depth: u8) -> Result<f64, &'static str> {
+    // depth reached
+    if depth == 0 {
         return static_eval(game);
     }
 
+    // game ended
     let moves = game.possible_moves();
     if moves.is_empty() {
         return static_eval(game);
     }
 
     // explore
-    let scores = moves.into_iter().map(|my_move| {
+    for my_move in moves.into_iter() {
         let mut imaginary_game = game.clone();
         imaginary_game.make_move(my_move)?;
-        recursive_tree_search(imaginary_game, depth + 1, max_depth).map(OrderedFloat)
-    });
-
-    match game.current_player {
-        Player::First => scores.max(),
-        Player::Second => scores.min(),
+        let score = alpha_beta_minimax(imaginary_game, alpha, beta, depth - 1).map(OrderedFloat)?;
+        match game.current_player {
+            Player::First => {
+                if score > alpha {
+                    alpha = score;
+                }
+                // prune
+                if alpha >= beta {
+                    break;
+                }
+            }
+            Player::Second => {
+                if score < beta {
+                    beta = score;
+                }
+                // prune
+                if alpha >= beta {
+                    break;
+                }
+            }
+        };
     }
-    .ok_or("could not determine the max or min score in tree search")?
-    .map(|val| val.into_inner())
+
+    // return
+    Ok(match game.current_player {
+        Player::First => alpha,
+        Player::Second => beta
+    }.into_inner())
 }
