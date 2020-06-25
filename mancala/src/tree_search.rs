@@ -1,6 +1,6 @@
 use crate::game::{Game, Player, Status};
 use ordered_float::OrderedFloat;
-use std::{i8, f64};
+use std::{f64, i8};
 
 // First player = positive
 // Second player = negative
@@ -26,7 +26,13 @@ pub fn tree_search(game: &Game, depth: u8) -> Result<usize, &'static str> {
     let eval_closure = |&my_move: &usize| {
         let mut imaginary_game = game.clone();
         imaginary_game.make_move(my_move)?;
-        alpha_beta_minimax(imaginary_game, OrderedFloat(f64::NEG_INFINITY), OrderedFloat(f64::INFINITY), depth).map(OrderedFloat)
+        alpha_beta_minimax(
+            imaginary_game,
+            OrderedFloat(f64::NEG_INFINITY),
+            OrderedFloat(f64::INFINITY),
+            depth,
+        )
+        .map(OrderedFloat)
     };
 
     // pick best move
@@ -40,7 +46,12 @@ pub fn tree_search(game: &Game, depth: u8) -> Result<usize, &'static str> {
 
 // alpha: best explored option along path to root for maximizer
 // beta: best explored option along path to root for minimizer
-fn alpha_beta_minimax(game: Game, mut alpha: OrderedFloat<f64>, mut beta: OrderedFloat<f64>, depth: u8) -> Result<f64, &'static str> {
+fn alpha_beta_minimax(
+    game: Game,
+    mut alpha: OrderedFloat<f64>,
+    mut beta: OrderedFloat<f64>,
+    depth: u8,
+) -> Result<f64, &'static str> {
     // depth reached
     if depth == 0 {
         return static_eval(game);
@@ -79,9 +90,9 @@ fn alpha_beta_minimax(game: Game, mut alpha: OrderedFloat<f64>, mut beta: Ordere
         };
     }
 
-    // return
     Ok(match game.current_player {
         Player::First => alpha,
-        Player::Second => beta
-    }.into_inner())
+        Player::Second => beta,
+    }
+    .into_inner())
 }
