@@ -29,9 +29,9 @@ impl Network {
             return Err("network should have 112 input nodes (board repr as bits) and 1 output node (static eval)");
         }
         let len = layer_sizes.len();
-        let layer_shapes = layer_sizes[0..(len - 1)]
+        let layer_shapes = layer_sizes[1..len]
             .iter()
-            .zip(layer_sizes[1..len].iter());
+            .zip(layer_sizes[0..(len - 1)].iter());
 
         let mut rng = rand::thread_rng();
         let distr = Open01;
@@ -93,8 +93,8 @@ impl Network {
 }
 
 impl Agent for Network {
-    fn evaluate_game(&self, game: Game) -> Result<f64, &'static str> {
-        let input = Self::create_input(&game);
+    fn evaluate_game(&self, game: &Game) -> Result<f64, &'static str> {
+        let input = Self::create_input(game);
         let output = self.feedforward(input);
 
         // handle nan

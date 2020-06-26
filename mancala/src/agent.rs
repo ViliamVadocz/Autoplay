@@ -5,58 +5,65 @@ use std::{f64, i8};
 pub trait Agent {
     /// First player = positive
     /// Second player = negative
-    fn evaluate_game(&self, game: Game) -> Result<f64, &'static str>;
+    fn evaluate_game(&self, game: &Game) -> Result<f64, &'static str>;
 
     fn tree_search(&self, game: &Game, depth: u8) -> Result<usize, &'static str> {
-        // make closure
-        let eval_closure = |&my_move: &usize| {
-            let mut imaginary_game = game.clone();
-            imaginary_game.make_move(my_move)?;
-            self.alpha_beta_minimax(
-                imaginary_game,
-                OrderedFloat(f64::NEG_INFINITY),
-                OrderedFloat(f64::INFINITY),
-                depth,
-            )
-            .map(OrderedFloat)
-        };
+        let moves = game.possible_moves();
+        let mut best = *moves
+            .first()
+            .ok_or("cannot use tree_search for a game with no moves")?;
+        let mut alpha = OrderedFloat(f64::NEG_INFINITY);
+        let mut beta = OrderedFloat(f64::INFINITY);
 
         // pick best move
-        let moves = game.possible_moves().into_iter();
-        match game.current_player {
-            Player::First => moves.max_by_key(eval_closure),
-            Player::Second => moves.min_by_key(eval_closure),
+        for my_move in moves.into_iter() {
+            let score = self
+                .alpha_beta_minimax(game, my_move, alpha, beta, depth)
+                .map(OrderedFloat)?;
+            match game.current_player {
+                Player::First => {
+                    if score > alpha {
+                        alpha = score;
+                        best = my_move;
+                    }
+                }
+                Player::Second => {
+                    if score < beta {
+                        beta = score;
+                        best = my_move;
+                    }
+                }
+            };
         }
-        .ok_or("cannot use tree_search for a game with no moves")
+        Ok(best)
     }
 
-    // BUG HERE PROBABLY
+    // PRUNING DID NOT GIVE THE SAME RESULT. BUG STILL EXISTS HERE.
     // alpha: best explored option along path to root for maximizer
     // beta: best explored option along path to root for minimizer
     fn alpha_beta_minimax(
         &self,
-        game: Game,
+        game: &Game,
+        my_move: usize,
         mut alpha: OrderedFloat<f64>,
         mut beta: OrderedFloat<f64>,
         depth: u8,
     ) -> Result<f64, &'static str> {
-        // depth reached
+        // exit conditions
         if depth == 0 {
             return self.evaluate_game(game);
         }
-
-        // game ended
-        let moves = game.possible_moves();
-        if moves.is_empty() {
+        if let Status::Ended = game.status {
             return self.evaluate_game(game);
         }
 
+        let mut imaginary_game = game.clone();
+        imaginary_game.make_move(my_move)?;
+
         // explore
-        for my_move in moves.into_iter() {
-            let mut imaginary_game = game.clone();
-            imaginary_game.make_move(my_move)?;
+        for my_move in imaginary_game.possible_moves().into_iter() {
             let score = self
-                .alpha_beta_minimax(imaginary_game, alpha, beta, depth - 1)
+                .alpha_beta_minimax(&imaginary_game, my_move, alpha, beta, depth - 1)
                 .map(OrderedFloat)?;
             match game.current_player {
                 Player::First => {
@@ -92,7 +99,7 @@ pub trait Agent {
 pub struct SimpleAgent {}
 
 impl Agent for SimpleAgent {
-    fn evaluate_game(&self, game: Game) -> Result<f64, &'static str> {
+    fn evaluate_game(&self, game: &Game) -> Result<f64, &'static str> {
         let eval = match game.status {
             Status::Running => game.board[6] - game.board[13],
             Status::Ended => match game.get_winner() {

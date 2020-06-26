@@ -24,8 +24,8 @@ fn main() -> Result<(), &'static str> {
         println!("{}", game);
         let moves = game.possible_moves();
         let m = match game.current_player {
-            Player::First => a.tree_search(&game, 100)?,
-            Player::Second => n.tree_search(&game, 20)?,
+            Player::First => n.tree_search(&game, 3)?,
+            Player::Second => a.tree_search(&game, 5)?,
         };
         game.make_move(m)?;
 
