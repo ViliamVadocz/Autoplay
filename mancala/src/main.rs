@@ -18,14 +18,16 @@ fn main() -> Result<(), &'static str> {
     let mut turn_num = 0;
 
     let a = SimpleAgent {};
-    let n = Network::from(&[112, 56, 28, 14, 1], rect_lin_unit)?;
+    let n = Network::from(&[112, 56, 28, 1], rect_lin_unit)?;
+    // n.save("test_b.data", "test_w.data")?;
+    // let nn = Network::from_save("test_b.data", "test_w.data", rect_lin_unit)?;
 
     while let Status::Running = game.status {
         println!("{}", game);
         let moves = game.possible_moves();
         let m = match game.current_player {
-            Player::First => n.tree_search(&game, 3)?,
-            Player::Second => a.tree_search(&game, 5)?,
+            Player::First => a.tree_search(&game, 10)?,
+            Player::Second => n.tree_search(&game, 5)?,
         };
         game.make_move(m)?;
 
