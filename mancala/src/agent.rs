@@ -12,10 +12,12 @@ pub trait Agent {
         let mut best = *moves
             .first()
             .ok_or("cannot use tree_search for a game with no moves")?;
+
         let mut alpha = OrderedFloat(f64::NEG_INFINITY);
         let mut beta = OrderedFloat(f64::INFINITY);
 
         // pick best move
+        // no pruning at top
         for my_move in moves.into_iter() {
             let score = self
                 .alpha_beta_minimax(game, my_move, alpha, beta, depth)
@@ -38,7 +40,6 @@ pub trait Agent {
         Ok(best)
     }
 
-    // PRUNING DID NOT GIVE THE SAME RESULT. BUG STILL EXISTS HERE.
     // alpha: best explored option along path to root for maximizer
     // beta: best explored option along path to root for minimizer
     fn alpha_beta_minimax(
@@ -57,6 +58,12 @@ pub trait Agent {
             return self.evaluate_game(game);
         }
 
+        let mut value = match game.current_player {
+            Player::First => OrderedFloat(f64::NEG_INFINITY),
+            Player::Second => OrderedFloat(f64::INFINITY),
+        };
+
+        // make move
         let mut imaginary_game = game.clone();
         imaginary_game.make_move(my_move)?;
 
@@ -65,21 +72,31 @@ pub trait Agent {
             let score = self
                 .alpha_beta_minimax(&imaginary_game, my_move, alpha, beta, depth - 1)
                 .map(OrderedFloat)?;
+
             match game.current_player {
+                // maximizing player
                 Player::First => {
-                    if score > alpha {
-                        alpha = score;
+                    if score > value {
+                        value = score;
                     }
-                    // prune
+                    if value > alpha {
+                        alpha = value;
+                    }
+                    // beta cut-off
                     if alpha >= beta {
                         break;
                     }
                 }
+
+                // minimizing player
                 Player::Second => {
-                    if score < beta {
-                        beta = score;
+                    if score < value {
+                        value = score;
                     }
-                    // prune
+                    if value < beta {
+                        beta = value;
+                    }
+                    // alpha cut-off
                     if alpha >= beta {
                         break;
                     }
@@ -87,11 +104,7 @@ pub trait Agent {
             };
         }
 
-        Ok(match game.current_player {
-            Player::First => alpha,
-            Player::Second => beta,
-        }
-        .into_inner())
+        Ok(value.into_inner())
     }
 }
 
