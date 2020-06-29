@@ -1,6 +1,7 @@
 use bitmaps::Bitmap;
 use typenum::U64;
 
+
 enum Status {
     Running,
     Ended
@@ -153,6 +154,9 @@ impl Game {
             }
         };
 
+        // TODO
+        // redo to not give invalid moves (see test below)
+
         for pos in 0..64 {
             let x = pos % 8;
             let y = pos / 8;
@@ -168,9 +172,9 @@ impl Game {
         moves
     }
 
-    pub fn make_move(&mut self, mov: (usize, usize)) {
-
-    }
+    // pub fn make_move(&mut self, my_move: (usize, usize)) {
+    //     Ok(())
+    // }
 
     fn update_status(&mut self) {
         if self.board.white.len() == 1 || self.board.red.len() == 1 {
@@ -196,44 +200,109 @@ fn bitmap_to_string(b: Bitmap<U64>) -> String {
 }
 
 
+#[cfg(test)]
+mod tests {
+    use crate::game::*;
 
-
-
-
-
-
-
-
-
-fn get_neighbours_of(board: &[u16; 25]) -> Vec<Vec<usize>> {
-    let mut neighbours_of = Vec::new();
-    for i in 0..25 {
-        let x = i % 5;
-        let y = i / 5;
-        let value = board[i];
-        // 0 never appears so we use it for off-limits tiles
-        if value == 0 {
-            neighbours_of.push(Vec::new());
-            continue;
+    fn dist(a: usize, b: usize) -> usize {
+        if a > b {
+            a - b
+        } else{
+            b - a
         }
-        let mut neighbours = Vec::new();
-        // right
-        if x < 4 && value == board[i + 1] {
-            neighbours.push(i + 1);
-        }
-        // down
-        if y < 4 && value == board[i + 5] {
-            neighbours.push(i + 5);
-        }
-        // left
-        if x > 0 && value == board[i - 1] {
-            neighbours.push(i - 1);
-        }
-        // up
-        if y > 0 && value == board[i - 5] {
-            neighbours.push(i - 5);
-        }
-        neighbours_of.push(neighbours);
     }
-    neighbours_of
+    
+    fn validate_moves(game: Game) {
+        let moves = game.move_gen();
+        let mut first_move = true;
+        let mut capture = false;
+        for test_move in moves.into_iter() {
+            // in bounds
+            assert!(0 < test_move.0 && test_move.0 < 64);
+            assert!(0 < test_move.1 && test_move.1 < 64);
+            // to and from are different
+            assert_ne!(test_move.0, test_move.1);
+
+            let (my_pieces, enemy_pieces) = match game.current_player {
+                Player::White => (&game.board.white, &game.board.red),
+                Player::Red => (&game.board.red, &game.board.white),
+            };
+
+            // my piece exists at that location
+            assert!(my_pieces.get(test_move.0));
+            let level_2 = game.board.l2.get(test_move.0);
+            
+            let from_x = test_move.0 % 8;
+            let from_y = test_move.0 / 8;
+            let to_x = test_move.1 % 8;
+            let to_y = test_move.1 / 8;
+
+            let distance: usize;
+            if from_y == to_y {
+                // horizontal
+                distance = dist(from_x, to_x);
+            } else if from_x == to_x {
+                // vertical
+                distance = dist(from_x, to_x)
+            } else {
+                // diagonal
+                let h_dist = dist(from_x, to_x);
+                let v_dist = dist(from_y, to_y);
+                assert_eq!(h_dist, v_dist);
+                distance = h_dist;
+            }
+            if level_2 {
+                assert!(distance < 4);
+            } else {
+                assert!(distance < 3);
+            }
+
+            // forced capture
+            let landing_on_opponent = enemy_pieces.get(test_move.1);
+            if landing_on_opponent {
+                // all moves must be captures if there is a possible capture
+                assert!(first_move);
+                capture = true;
+            }
+            
+            if capture {
+                assert!(landing_on_opponent);
+                // can only capture with larger or equal
+                if game.board.l2.get(test_move.1) {
+                    assert!(level_2)
+                }
+
+                // check that enemy is not in the way
+                if distance > 1 {
+                    let x_dir = if to_x > from_x {1} else if to_x < from_x {-1} else {0};
+                    let y_dir = if to_y > from_y {1} else if to_y < from_y {-1} else {0};
+                    for steps in 1..(distance as i8) {
+                        let pos_x = (from_x as i8 + x_dir * steps) as usize;
+                        let pos_y = (from_y as i8 + y_dir * steps) as usize;
+                        assert!(!enemy_pieces.get(pos_y * 8 + pos_x));
+                    }
+                }
+            }
+
+            // only level 1s can merge
+            else if my_pieces.get(test_move.1) {
+                assert!(!level_2);
+                assert!(!game.board.l2.get(test_move.1));
+            }
+            
+            if first_move {
+                first_move = false;
+            }
+        }
+    }
+
+    #[test]
+    fn test_move_gen() {
+        validate_moves(Game::from("1010100011010000061000001000000600000606000006000000006600006660".to_string(), 0));
+        validate_moves(Game::from("1010100010000000011000001000010600000006000006000000006600006660".to_string(), 1));
+        validate_moves(Game::from("1010100010100000010000001000060000000006000006000000060600006660".to_string(), 0));
+        validate_moves(Game::from("1000000010100000010000001000000000000006000002000600000600006660".to_string(), 1));
+        validate_moves(Game::from("1020000010100000010000001000060000060006000006000000000600006660".to_string(), 0));
+        validate_moves(Game::from("1000000010100000000000001000000000010006000000600000020000006060".to_string(), 0));
+    }
 }
