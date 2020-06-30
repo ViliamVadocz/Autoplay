@@ -7,6 +7,7 @@ mod messages;
 mod connection;
 mod game;
 mod bot;
+mod board;
 
 use std::io::Result;
 

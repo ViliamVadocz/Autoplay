@@ -1,6 +1,4 @@
-use bitmaps::Bitmap;
-use typenum::U64;
-
+use crate::board::Board;
 
 enum Status {
     Running,
@@ -22,70 +20,14 @@ impl Player {
     }
 }
 
-/* board layout
-0 1 2 3 4 5 6 7
-8 9 . . . . . .
-. . . . . . . .
-. . . . . . . .
-. . . . . . . .
-. . . . . . . .
-. . . . . . . .
-. . . . . . . .
-
-w w w w . . . .
-w w w . . . . .
-w w . . . . . .
-w . . . . . . .
-. . . . . . . r
-. . . . . . r r
-. . . . . r r r
-. . . . r r r r
-*/
-
-struct Board {
-    white: Bitmap<U64>,
-    red: Bitmap<U64>,
-    l2: Bitmap<U64>,
-    // l3: Bitmap<U64>,
+struct Move {
+    from: usize,
+    to: usize,
 }
 
-impl Board {
-    fn new() -> Board {
-        Board {
-            white: Bitmap::from_value(16975631),
-            red: Bitmap::from_value(17357084619874238464),
-            l2: Bitmap::new(),
-            // l3: Bitmap::new(),
-        }
-    }
-
-    fn from(board: String) -> Board {
-        let mut white = Bitmap::new();
-        let mut red = Bitmap::new();
-        let mut l2 = Bitmap::new();
-        // let mut l3 = Bitmap::new();
-
-        for (i, s) in board.chars().enumerate() {
-            // colour
-            match s {
-                '1' | '2' | '3' => white.set(i, true),
-                '6' | '7' | '8' => red.set(i, true),
-                _ => true
-            };
-            // level
-            match s {
-                '2' | '7' => l2.set(i, true),
-                // '3' | '8' => l3.set(i, true),
-                _ => true
-            };
-        }
-
-        Board {
-            white,
-            red,
-            l2,
-            // l3,
-        }
+impl Move {
+    fn from(from: usize, to: usize) -> Move {
+        Move {from, to}
     }
 }
 
@@ -112,7 +54,7 @@ impl Game {
         }
     }
 
-    fn move_gen(&self) -> Vec<(usize, usize)> {
+    fn move_gen(&self) -> Vec<Move> {
         let my_pieces = match self.current_player {
             Player::White => &self.board.white,
             Player::Red => &self.board.red
@@ -127,29 +69,29 @@ impl Game {
             let down = y < 8 - steps;
             
             if up {
-                moves.push((from, from - 8 * steps));
+                moves.push(Move::from(from, from - 8 * steps));
                 if left {
-                    moves.push((from, from - 9 * steps));
+                    moves.push(Move::from(from, from - 9 * steps));
                 }
                 if right {
-                    moves.push((from, from - 7 * steps));
+                    moves.push(Move::from(from, from - 7 * steps));
                 }
             }
 
             if left {
-                moves.push((from, from - steps));
+                moves.push(Move::from(from, from - steps));
             }
             if right {
-                moves.push((from, from + steps));
+                moves.push(Move::from(from, from + steps));
             }
 
             if down {
-                moves.push((from, from + 8 * steps));
+                moves.push(Move::from(from, from + 8 * steps));
                 if left {
-                    moves.push((from, from + 7 * steps));
+                    moves.push(Move::from(from, from + 7 * steps));
                 }
                 if right {
-                    moves.push((from, from + 9 * steps));
+                    moves.push(Move::from(from, from + 9 * steps));
                 }
             }
         };
@@ -172,7 +114,7 @@ impl Game {
         moves
     }
 
-    // pub fn make_move(&mut self, my_move: (usize, usize)) {
+    // pub fn make_move(&mut self, my_move: Move) {
     //     Ok(())
     // }
 
@@ -181,22 +123,6 @@ impl Game {
             self.status = Status::Ended;
         }
     }
-}
-
-fn bitmap_to_string(b: Bitmap<U64>) -> String {
-    let mut repr = String::new();
-    for pos in 0..64 {
-        if b.get(pos) {
-            repr.push('1');
-        } else {
-            repr.push('0');
-        }
-        repr.push(' ');
-        if pos % 8 == 7 {
-            repr.push('\n');
-        }
-    }
-    repr
 }
 
 
@@ -218,10 +144,10 @@ mod tests {
         let mut capture = false;
         for test_move in moves.into_iter() {
             // in bounds
-            assert!(0 < test_move.0 && test_move.0 < 64);
-            assert!(0 < test_move.1 && test_move.1 < 64);
+            assert!(0 < test_move.from && test_move.from < 64);
+            assert!(0 < test_move.to && test_move.to < 64);
             // to and from are different
-            assert_ne!(test_move.0, test_move.1);
+            assert_ne!(test_move.from, test_move.to);
 
             let (my_pieces, enemy_pieces) = match game.current_player {
                 Player::White => (&game.board.white, &game.board.red),
@@ -229,13 +155,13 @@ mod tests {
             };
 
             // my piece exists at that location
-            assert!(my_pieces.get(test_move.0));
-            let level_2 = game.board.l2.get(test_move.0);
+            assert!(my_pieces.get(test_move.from));
+            let level_2 = game.board.l2.get(test_move.from);
             
-            let from_x = test_move.0 % 8;
-            let from_y = test_move.0 / 8;
-            let to_x = test_move.1 % 8;
-            let to_y = test_move.1 / 8;
+            let from_x = test_move.from % 8;
+            let from_y = test_move.from / 8;
+            let to_x = test_move.to % 8;
+            let to_y = test_move.to / 8;
 
             let distance: usize;
             if from_y == to_y {
@@ -258,7 +184,7 @@ mod tests {
             }
 
             // forced capture
-            let landing_on_opponent = enemy_pieces.get(test_move.1);
+            let landing_on_opponent = enemy_pieces.get(test_move.to);
             if landing_on_opponent {
                 // all moves must be captures if there is a possible capture
                 assert!(first_move);
@@ -268,7 +194,7 @@ mod tests {
             if capture {
                 assert!(landing_on_opponent);
                 // can only capture with larger or equal
-                if game.board.l2.get(test_move.1) {
+                if game.board.l2.get(test_move.to) {
                     assert!(level_2)
                 }
 
@@ -285,9 +211,9 @@ mod tests {
             }
 
             // only level 1s can merge
-            else if my_pieces.get(test_move.1) {
+            else if my_pieces.get(test_move.to) {
                 assert!(!level_2);
-                assert!(!game.board.l2.get(test_move.1));
+                assert!(!game.board.l2.get(test_move.to));
             }
             
             if first_move {
