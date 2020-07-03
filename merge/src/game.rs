@@ -1,3 +1,4 @@
+use std::slice::Iter;
 use crate::board::Board;
 
 enum Status {
@@ -19,6 +20,62 @@ impl Player {
         }
     }
 }
+
+struct Direction {
+    right: bool,
+    left: bool,
+    up: bool,
+    down: bool,
+}
+
+lu 000
+u  001
+ru 010
+
+l  011
+r  100
+
+ld 101
+d  110
+rd 111
+
+// enum Direction {
+//     UpLeft,
+//     Up,
+//     UpRight,
+//     Left,
+//     Right,
+//     DownLeft,
+//     Down,
+//     DownRight,
+// }
+
+// impl Direction {
+//     fn get_landing(&self, from: usize, steps: usize) -> usize {
+//         match self {
+//             Direction::UpLeft => from - 9 * steps,
+//             Direction::Up => from - 8 * steps,
+//             Direction::UpRight => from - 7 * steps,
+//             Direction::Left => from - 1 * steps,
+//             Direction::Right => from + 1 * steps,
+//             Direction::DownLeft => from + 7 * steps,
+//             Direction::Down => from + 8 * steps,
+//             Direction::DownRight => from + 9 * steps,
+//         }
+//     }
+
+//     fn iterator() -> Iter<'static, Direction> {
+//         static DIRECTIONS: [Direction; 8] = [Direction::UpLeft,
+//         Direction::Up,
+//         Direction::UpRight,
+//         Direction::Left,
+//         Direction::Right,
+//         Direction::DownLeft,
+//         Direction::Down,
+//         Direction::DownRight];
+//         DIRECTIONS.iter()
+//     }
+// }
 
 struct Move {
     from: usize,
@@ -55,58 +112,73 @@ impl Game {
     }
 
     fn move_gen(&self) -> Vec<Move> {
-        let my_pieces = match self.current_player {
-            Player::White => &self.board.white,
-            Player::Red => &self.board.red
+        let (my_pieces, enemy_pieces) = match self.current_player {
+            Player::White => (&self.board.white, &self.board.red),
+            Player::Red => (&self.board.red, &self.board.white)
         };
 
         let mut moves = Vec::new();
+        let mut capture = false;
 
-        let mut add_moves = |from, x, y, steps| {
+        let mut add_moves = |pos, x, y, steps| {
             let left = x > steps - 1;
             let right = x < 8 - steps;
             let up = y > steps - 1;
             let down = y < 8 - steps;
-            
+
+            let mut landing_positions = Vec::new();
+
             if up {
-                moves.push(Move::from(from, from - 8 * steps));
+                landing_positions.push(Direction::Up.get_landing(pos, steps));
                 if left {
-                    moves.push(Move::from(from, from - 9 * steps));
+                    landing_positions.push(Direction::UpLeft.get_landing(pos, steps));
                 }
                 if right {
-                    moves.push(Move::from(from, from - 7 * steps));
+                    landing_positions.push(Direction::UpRight.get_landing(pos, steps));
                 }
             }
 
             if left {
-                moves.push(Move::from(from, from - steps));
+                landing_positions.push(Direction::Left.get_landing(pos, steps));
             }
             if right {
-                moves.push(Move::from(from, from + steps));
+                landing_positions.push(Direction::Right.get_landing(pos, steps));
             }
 
             if down {
-                moves.push(Move::from(from, from + 8 * steps));
+                landing_positions.push(Direction::Down.get_landing(pos, steps));
                 if left {
-                    moves.push(Move::from(from, from + 7 * steps));
+                    landing_positions.push(Direction::DownLeft.get_landing(pos, steps));
                 }
                 if right {
-                    moves.push(Move::from(from, from + 9 * steps));
+                    landing_positions.push(Direction::DownRight.get_landing(pos, steps));
                 }
             }
+
+            for &land_pos in landing_positions.iter() {
+                let enemy = enemy_pieces.get(land_pos);
+                let ally = my_pieces.get(land_pos);
+                let enemy_l2 = self.board.l2.get(land_pos);
+                let me_l2 = my_pieces.get(pos);
+                
+            }
         };
-
-        // TODO
-        // redo to not give invalid moves (see test below)
-
+        
         for pos in 0..64 {
             let x = pos % 8;
             let y = pos / 8;
+
+            let max_left = x;
+            let max_right = 7 - x;
+            let max_up = y;
+            let max_down = 7 - y;
+
             if my_pieces.get(pos) {
-                add_moves(pos, x, y, 1);
-                add_moves(pos, x, y, 2);
-                if self.board.l2.get(pos) {
-                    add_moves(pos, x, y, 3);
+                let max_steps = if self.board.l2.get(pos) {3} else {2};
+                for dir in [-9, -8, -7, -1, 1, 7, 8, 9].iter() {
+                    for step in 1..(max_steps + 1) {
+                        // ray cast, break if hit capturable
+                    }
                 }
             }
         }
@@ -205,7 +277,8 @@ mod tests {
                     for steps in 1..(distance as i8) {
                         let pos_x = (from_x as i8 + x_dir * steps) as usize;
                         let pos_y = (from_y as i8 + y_dir * steps) as usize;
-                        assert!(!enemy_pieces.get(pos_y * 8 + pos_x));
+                        // special case where I can't capture closest because it is level 2 and I am not
+                        assert!(!enemy_pieces.get(pos_y * 8 + pos_x) || !level_2 && game.board.l2.get(test_move.to));
                     }
                 }
             }
