@@ -5,7 +5,7 @@ use rand::{
     Rng,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Card {
     Boar,
     Cobra,
@@ -182,4 +182,14 @@ pub fn draw_cards() -> Vec<Card> {
         }
     }
     drawn
+}
+
+pub fn reverse(board: &Bitmap<U25>) -> Bitmap<U25> {
+    let mut reversed = Bitmap::new();
+    for index in 0..25 {
+        if board.get(index) {
+            reversed.set(25 - index, true);
+        }
+    }
+    reversed
 }

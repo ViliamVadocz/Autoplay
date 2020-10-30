@@ -9,5 +9,8 @@ mod cards;
 mod game;
 
 fn main() {
-    println!("{}", game::Game::new())
+    let mut g = game::Game::new();
+    println!("{}", g);
+    g.take_turn(game::Move{from: 23, to: 18, used_left_card: true});
+    println!("{}", g);
 }
