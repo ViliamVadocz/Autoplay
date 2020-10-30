@@ -1,27 +1,11 @@
 use bitmaps::Bitmap;
 use typenum::U25;
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng,
+};
 
-macro_rules! card {
-    // no more 1s and 0s
-    (@$counter:expr, $temp_bitmap:ident,) => {};
-    // match 0
-    (@$counter:expr, $temp_bitmap:ident, 0 $($other:tt)*) => {
-        // don't do anything, just recursively call with counter + 1
-        card!(@$counter + 1, $temp_bitmap, $($other)*);
-    };
-    // match 1
-    (@$counter:expr, $temp_bitmap:ident, 1 $($other:tt)*) => {
-        $temp_bitmap.set($counter, true); // set this position to true
-        card!(@$counter + 1, $temp_bitmap, $($other)*);
-    };
-    // get 1s and 0s
-    ($($lit:tt)*) => {
-        let temp_bitmap: Bitmap<U25> = Bitmap::new();
-        card!(@0, temp_bitmap, $($lit)*);
-        temp_bitmap
-    };
-}
-
+#[derive(Debug, PartialEq)]
 pub enum Card {
     Boar,
     Cobra,
@@ -43,104 +27,159 @@ pub enum Card {
 
 impl Card {
     #[rustfmt::skip]
-    fn get_moves(&self) -> Bitmap<U25> {
+    pub fn get_moves(&self) -> Bitmap<U25> {
         match self {
             Card::Boar =>
-                card!(0 0 0 0 0
-                      0 0 1 0 0
-                      0 1 0 1 0
-                      0 0 0 0 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       0 0 1 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0
+                       0 0 0 0 0),
             Card::Cobra =>
-                card!(0 0 0 0 0
-                      0 0 0 1 0
-                      0 1 0 0 0
-                      0 0 0 1 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       0 0 0 1 0
+                       0 1 0 0 0
+                       0 0 0 1 0
+                       0 0 0 0 0),
             Card::Crab =>
-                card!(0 0 0 0 0
-                      0 0 1 0 0
-                      1 0 0 0 1
-                      0 0 0 0 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       0 0 1 0 0
+                       1 0 0 0 1
+                       0 0 0 0 0
+                       0 0 0 0 0),
             Card::Crane =>
-                card!(0 0 0 0 0
-                      0 0 1 0 0
-                      0 0 0 0 0
-                      0 1 0 1 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       0 0 1 0 0
+                       0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0),
             Card::Dragon =>
-                card!(0 0 0 0 0
-                      1 0 0 0 1
-                      0 0 0 0 0
-                      0 1 0 1 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       1 0 0 0 1
+                       0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0),
             Card::Eel =>
-                card!(0 0 0 0 0
-                      0 1 0 0 0
-                      0 0 0 1 0
-                      0 1 0 0 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       0 1 0 0 0
+                       0 0 0 1 0
+                       0 1 0 0 0
+                       0 0 0 0 0),
             Card::Elephant =>
-                card!(0 0 0 0 0
-                      0 1 0 1 0
-                      0 1 0 1 0
-                      0 0 0 0 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       0 1 0 1 0
+                       0 1 0 1 0
+                       0 0 0 0 0
+                       0 0 0 0 0),
             Card::Frog =>
-                card!(0 0 0 0 0
-                      0 1 0 0 0
-                      1 0 0 0 0
-                      0 0 0 1 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       0 1 0 0 0
+                       1 0 0 0 0
+                       0 0 0 1 0
+                       0 0 0 0 0),
             Card::Goose =>
-                card!(0 0 0 0 0
-                      0 1 0 0 0
-                      0 1 0 1 0
-                      0 0 0 1 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       0 1 0 0 0
+                       0 1 0 1 0
+                       0 0 0 1 0
+                       0 0 0 0 0),
             Card::Horse =>
-                card!(0 0 0 0 0
-                      0 0 1 0 0
-                      0 1 0 0 0
-                      0 0 1 0 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       0 0 1 0 0
+                       0 1 0 0 0
+                       0 0 1 0 0
+                       0 0 0 0 0),
             Card::Mantis =>
-                card!(0 0 0 0 0
-                      0 1 0 1 0
-                      0 0 0 0 0
-                      0 0 1 0 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0
+                       0 0 1 0 0
+                       0 0 0 0 0),
             Card::Monkey =>
-                card!(0 0 0 0 0
-                      0 1 0 1 0
-                      0 0 0 0 0
-                      0 1 0 1 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0),
             Card::Ox =>
-                card!(0 0 0 0 0
-                      0 0 1 0 0
-                      0 0 0 1 0
-                      0 0 1 0 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       0 0 1 0 0
+                       0 0 0 1 0
+                       0 0 1 0 0
+                       0 0 0 0 0),
             Card::Rabbit =>
-                card!(0 0 0 0 0
-                      0 0 0 1 0
-                      0 0 0 0 1
-                      0 1 0 0 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       0 0 0 1 0
+                       0 0 0 0 1
+                       0 1 0 0 0
+                       0 0 0 0 0),
             Card::Rooster =>
-                card!(0 0 0 0 0
-                      0 0 0 1 0
-                      0 1 0 1 0
-                      0 1 0 0 0
-                      0 0 0 0 0),
+                board!(0 0 0 0 0
+                       0 0 0 1 0
+                       0 1 0 1 0
+                       0 1 0 0 0
+                       0 0 0 0 0),
             Card::Tiger =>
-                card!(0 0 1 0 0
-                      0 0 0 0 0
-                      0 0 0 0 0
-                      0 0 1 0 0
-                      0 0 0 0 0),
+                board!(0 0 1 0 0
+                       0 0 0 0 0
+                       0 0 0 0 0
+                       0 0 1 0 0
+                       0 0 0 0 0),
         }
     }
+
+    pub fn is_white(&self) -> bool {
+        match self {
+            Card::Boar => true,
+            Card::Cobra => true,
+            Card::Crab => false,
+            Card::Crane => false,
+            Card::Dragon => true,
+            Card::Eel => false,
+            Card::Elephant => true,
+            Card::Frog => true,
+            Card::Goose => false,
+            Card::Horse => true,
+            Card::Mantis => true,
+            Card::Monkey => false,
+            Card::Ox => false,
+            Card::Rabbit => false,
+            Card::Rooster => true,
+            Card::Tiger => false,
+        }
+    }
+}
+
+impl Distribution<Card> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Card {
+        match rng.gen_range(0, 16) {
+            0 => Card::Boar,
+            1 => Card::Cobra,
+            2 => Card::Crab,
+            3 => Card::Crane,
+            4 => Card::Dragon,
+            5 => Card::Eel,
+            6 => Card::Elephant,
+            7 => Card::Frog,
+            8 => Card::Goose,
+            9 => Card::Horse,
+            10 => Card::Mantis,
+            11 => Card::Monkey,
+            12 => Card::Ox,
+            13 => Card::Rabbit,
+            14 => Card::Rooster,
+            _ => Card::Tiger,
+        }
+    }
+}
+
+pub fn draw_cards() -> Vec<Card> {
+    let mut drawn = vec![];
+    while drawn.len() < 5 {
+        let card: Card = rand::random();
+        if !drawn.contains(&card) {
+            drawn.push(card);
+        }
+    }
+    drawn
 }
