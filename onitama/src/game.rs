@@ -57,10 +57,10 @@ impl Game {
     pub fn take_turn(&mut self, my_move: Move) {
         // TODO maybe do move validation?
 
-        let (mut my_board, mut my_king, mut my_cards, mut opp_board, opp_king, opp_cards, goal_pos) = if self.white_to_move {
-            (&mut self.white, &mut self.white_king, &mut self.white_cards, &mut self.black, self.black_king, self.black_cards, 2)
+        let (my_board, my_king, my_cards, opp_board, opp_king, goal_pos) = if self.white_to_move {
+            (&mut self.white, &mut self.white_king, &mut self.white_cards, &mut self.black, self.black_king, 2)
         } else {
-            (&mut self.black, &mut self.black_king, &mut self.black_cards, &mut self.white, self.white_king, self.white_cards, 22)
+            (&mut self.black, &mut self.black_king, &mut self.black_cards, &mut self.white, self.white_king, 22)
         };
 
         // move my piece

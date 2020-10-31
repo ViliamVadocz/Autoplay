@@ -188,8 +188,39 @@ pub fn reverse(board: &Bitmap<U25>) -> Bitmap<U25> {
     let mut reversed = Bitmap::new();
     for index in 0..25 {
         if board.get(index) {
-            reversed.set(25 - index, true);
+            reversed.set(24 - index, true);
         }
     }
     reversed
+}
+
+pub fn shift_bitmap(board: &Bitmap<U25>, pos: usize) -> Bitmap<U25> {
+    let mut shifted = Bitmap::new();
+
+    let pos = pos as isize;
+    let x_diff = pos / 5 - 2;
+    for index in (pos - 12)..(pos + 13) {
+        let shifted_index = index + 12 - pos;
+        if 0 <= index && index < 25 && 0 <= shifted_index && shifted_index < 25 && index / 5 - shifted_index / 5 == x_diff {
+            shifted.set(index as usize, board.get(shifted_index as usize));
+        }
+    }
+    shifted
+}
+
+pub fn print_bitmap(bitmap: &Bitmap<U25>) {
+    let mut repr = String::new();
+    for index in 0..25 {
+        if bitmap.get(index) {
+            repr.push('1');
+        } else {
+            repr.push('0');
+        }
+        if index % 5 == 4 {
+            repr.push('\n')
+        } else {
+            repr.push(' ')
+        }
+    }
+    println!("{}", repr)
 }
