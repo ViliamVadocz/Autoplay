@@ -3,8 +3,9 @@ use typenum::U25;
 
 use std::fmt;
 
-use crate::cards::{Card, draw_cards};
+use crate::cards::{Card, draw_cards, reverse_bitmap, shift_bitmap};
 
+#[derive(Debug)]
 pub struct Move {
     pub from: usize,
     pub to: usize,
@@ -20,7 +21,7 @@ pub struct Game {
     black_cards: [Card; 2],
     table_card: Card,
     white_to_move: bool,
-    in_progress: bool,
+    pub in_progress: bool,
 }
 
 impl Game {
@@ -87,6 +88,49 @@ impl Game {
 
         // check for king capture or reaching end
         self.in_progress = opp_king != my_move.to && *my_king != goal_pos;
+    }
+
+    pub fn gen_moves(&self) -> Vec<Move> {
+        let (my_cards, my_pieces, my_king) = if self.white_to_move {
+            (&self.white_cards, &self.white, self.white_king)
+        } else {
+            (&self.black_cards, &self.black, self.black_king)
+        };
+
+        // get cards
+        let mut left = my_cards[0].get_moves();
+        let mut right = my_cards[1].get_moves();
+        if !self.white_to_move {
+            left = reverse_bitmap(&left);
+            right = reverse_bitmap(&right);
+        }
+        
+        let mut moves = Vec::new();
+        // for every one of my pieces, try each card
+        for from_pos in 0..25 {
+            if my_pieces.get(from_pos) {
+                let left_shifted = shift_bitmap(&left, from_pos);
+                let right_shifted = shift_bitmap(&right, from_pos);
+                for to_pos in 0..25 {
+                    // cannot go to a position already occupied by my piece
+                    if !my_pieces.get(to_pos) {
+                        if left_shifted.get(to_pos) {
+                            moves.push(Move {from: from_pos, to: to_pos, used_left_card: true});
+                        }
+                        if right_shifted.get(to_pos) {
+                            moves.push(Move {from: from_pos, to: to_pos, used_left_card: false});
+                        }
+                    }
+                }
+            }
+        }
+        // if no available moves, you can skip, but you still need to use a card
+        if moves.is_empty() {
+            moves.push(Move {from: my_king, to: my_king, used_left_card: true});
+            moves.push(Move {from: my_king, to: my_king, used_left_card: false});
+        }
+
+        moves
     }
 }
 

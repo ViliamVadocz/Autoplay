@@ -12,17 +12,11 @@ mod cards;
 mod game;
 
 fn main() {
-    // let mut g = game::Game::new();
-    // println!("{}", g);
-    // g.take_turn(game::Move{from: 23, to: 18, used_left_card: true});
-    // println!("{}", g);
-
-    let a = board!(
-        1 0 0 0 0
-        0 1 0 0 0
-        0 0 1 1 1
-        0 0 1 0 0
-        0 0 1 0 0
-    );
-    cards::print_bitmap(&cards::shift_bitmap(&cards::reverse(&a), 11));
+    let mut g = game::Game::new();
+    println!("{}", g);
+    while g.in_progress {
+        let mut moves = g.gen_moves();
+        g.take_turn(moves.pop().unwrap());
+        println!("{}", g);
+    }
 }

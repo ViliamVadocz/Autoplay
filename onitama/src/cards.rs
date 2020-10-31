@@ -184,7 +184,7 @@ pub fn draw_cards() -> Vec<Card> {
     drawn
 }
 
-pub fn reverse(board: &Bitmap<U25>) -> Bitmap<U25> {
+pub fn reverse_bitmap(board: &Bitmap<U25>) -> Bitmap<U25> {
     let mut reversed = Bitmap::new();
     for index in 0..25 {
         if board.get(index) {
