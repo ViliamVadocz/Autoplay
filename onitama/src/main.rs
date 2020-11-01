@@ -6,10 +6,14 @@ use bitmaps::Bitmap;
 use typenum::U25;
 
 #[macro_use]
+extern crate serde_derive;
+
+#[macro_use]
 mod macros;
 
 mod cards;
 mod game;
+mod messages;
 
 fn main() {
     let mut g = game::Game::new();
