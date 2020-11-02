@@ -1,6 +1,6 @@
 #[derive(Debug, Deserialize)]
 #[serde(tag = "messageType")]
-pub enum Message {
+pub enum LitamaMessage {
     #[serde(rename = "create")]
     Create(CreateMsg),
     #[serde(rename = "join")]
@@ -18,7 +18,7 @@ pub enum Message {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateMsg {
-    pub match_id: usize,
+    pub match_id: String,
     pub token: String,
     pub color: String,
 }
@@ -37,7 +37,7 @@ pub struct StateMsg {
     pub match_id: String,
     pub current_turn: String,
     pub cards: CardsObj,
-    pub starting_cards: CardsObj,
+    // pub starting_cards: CardsObj,
     pub moves: Vec<String>,
     pub board: String,
     pub game_state: String,
