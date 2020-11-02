@@ -1,6 +1,3 @@
-use bitmaps::Bitmap;
-use typenum::U25;
-
 #[macro_export]
 macro_rules! board {
     // no more 1s and 0s
