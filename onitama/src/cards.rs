@@ -1,9 +1,11 @@
+use crate::error::{Result, UnexpectedVariant};
 use bitmaps::Bitmap;
-use typenum::U25;
 use rand::{
     distributions::{Distribution, Standard},
     Rng,
 };
+use std::fmt;
+use typenum::U25;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Card {
@@ -148,6 +150,49 @@ impl Card {
             Card::Tiger => false,
         }
     }
+
+    pub fn get_name(&self) -> &str {
+        match self {
+            Card::Boar => "boar",
+            Card::Cobra => "cobra",
+            Card::Crab => "crab",
+            Card::Crane => "crane",
+            Card::Dragon => "dragon",
+            Card::Eel => "eel",
+            Card::Elephant => "elephant",
+            Card::Frog => "frog",
+            Card::Goose => "goose",
+            Card::Horse => "horse",
+            Card::Mantis => "mantis",
+            Card::Monkey => "monkey",
+            Card::Ox => "ox",
+            Card::Rabbit => "rabbit",
+            Card::Rooster => "rooster",
+            Card::Tiger => "tiger",
+        }
+    }
+
+    pub fn from_text(text: &str) -> Result<Card> {
+        match text {
+            "boar" => Ok(Card::Boar),
+            "cobra" => Ok(Card::Cobra),
+            "crab" => Ok(Card::Crab),
+            "crane" => Ok(Card::Crane),
+            "dragon" => Ok(Card::Dragon),
+            "eel" => Ok(Card::Eel),
+            "elephant" => Ok(Card::Elephant),
+            "frog" => Ok(Card::Frog),
+            "goose" => Ok(Card::Goose),
+            "horse" => Ok(Card::Horse),
+            "mantis" => Ok(Card::Mantis),
+            "monkey" => Ok(Card::Monkey),
+            "ox" => Ok(Card::Ox),
+            "rabbit" => Ok(Card::Rabbit),
+            "rooster" => Ok(Card::Rooster),
+            "tiger" => Ok(Card::Tiger),
+            _ => Err(Box::new(UnexpectedVariant::new(text.to_string()))),
+        }
+    }
 }
 
 impl Distribution<Card> for Standard {
@@ -201,7 +246,12 @@ pub fn shift_bitmap(board: &Bitmap<U25>, pos: usize) -> Bitmap<U25> {
     let x_diff = pos / 5 - 2;
     for index in (pos - 12)..(pos + 13) {
         let shifted_index = index + 12 - pos;
-        if 0 <= index && index < 25 && 0 <= shifted_index && shifted_index < 25 && index / 5 - shifted_index / 5 == x_diff {
+        if 0 <= index
+            && index < 25
+            && 0 <= shifted_index
+            && shifted_index < 25
+            && index / 5 - shifted_index / 5 == x_diff
+        {
             shifted.set(index as usize, board.get(shifted_index as usize));
         }
     }
