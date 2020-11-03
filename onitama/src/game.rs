@@ -126,34 +126,22 @@ impl Game {
 
         let mut moves = SmallVec::new();
         // for every one of my pieces, try each card
-        let my_pieces = my_pieces.into_value();
         let mut pieces = my_pieces;
-        loop {
-            let from_pos = pieces.trailing_zeros() as usize;
-            if from_pos == 32 {
-                break;
-            };
-            pieces ^= 1 << from_pos;
-            let mut left_shifted = shift_bitmap(&left, from_pos).into_value() & !my_pieces;
-            loop {
-                let to_pos = left_shifted.trailing_zeros() as usize;
-                if to_pos == 32 {
-                    break;
-                }
-                left_shifted ^= 1 << to_pos;
+        while let Some(from_pos) = pieces.first_index() {
+            pieces.set(from_pos, false);
+            let mut left_shifted = shift_bitmap(&left, from_pos) & !my_pieces;
+
+            while let Some(to_pos) = left_shifted.first_index() {
+                left_shifted.set(to_pos, false);
                 moves.push(Move {
                     from: from_pos,
                     to: to_pos,
                     used_left_card: true,
                 });
             }
-            let mut right_shifted = shift_bitmap(&right, from_pos).into_value() & !my_pieces;
-            loop {
-                let to_pos = right_shifted.trailing_zeros() as usize;
-                if to_pos == 32 {
-                    break;
-                }
-                right_shifted ^= 1 << to_pos;
+            let mut right_shifted = shift_bitmap(&right, from_pos) & !my_pieces;
+            while let Some(to_pos) = right_shifted.first_index() {
+                right_shifted.set(to_pos, false);
                 moves.push(Move {
                     from: from_pos,
                     to: to_pos,
