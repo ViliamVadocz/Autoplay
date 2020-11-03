@@ -1,5 +1,7 @@
+#![feature(test)]
 extern crate bitmaps;
 extern crate rand;
+extern crate test;
 extern crate typenum;
 extern crate websocket;
 #[macro_use]

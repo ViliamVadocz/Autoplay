@@ -4,7 +4,6 @@ use rand::{
     distributions::{Distribution, Standard},
     Rng,
 };
-use std::fmt;
 use typenum::U25;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -230,32 +229,27 @@ pub fn draw_cards() -> Vec<Card> {
 }
 
 pub fn reverse_bitmap(board: &Bitmap<U25>) -> Bitmap<U25> {
-    let mut reversed = Bitmap::new();
-    for index in 0..25 {
-        if board.get(index) {
-            reversed.set(24 - index, true);
-        }
-    }
-    reversed
+    let value = board.clone().into_value();
+    let reversed = value.reverse_bits() >> 32 - 25;
+    Bitmap::from_value(reversed)
 }
 
-pub fn shift_bitmap(board: &Bitmap<U25>, pos: usize) -> Bitmap<U25> {
-    let mut shifted = Bitmap::new();
+const SHIFT_MASK: [u32; 5] = [
+    0b00111_00111_00111_00111_00111,
+    0b01111_01111_01111_01111_01111,
+    0b11111_11111_11111_11111_11111,
+    0b11110_11110_11110_11110_11110,
+    0b11100_11100_11100_11100_11100,
+];
 
-    let pos = pos as isize;
-    let x_diff = pos / 5 - 2;
-    for index in (pos - 12)..(pos + 13) {
-        let shifted_index = index + 12 - pos;
-        if 0 <= index
-            && index < 25
-            && 0 <= shifted_index
-            && shifted_index < 25
-            && index / 5 - shifted_index / 5 == x_diff
-        {
-            shifted.set(index as usize, board.get(shifted_index as usize));
-        }
-    }
-    shifted
+pub fn shift_bitmap(board: &Bitmap<U25>, pos: usize) -> Bitmap<U25> {
+    let value = board.clone().into_value();
+    let shifted = if pos > 12 {
+        value.overflowing_shl(pos as u32 - 12).0
+    } else {
+        value.overflowing_shr(12 - pos as u32).0
+    };
+    Bitmap::from_value(shifted & SHIFT_MASK[pos % 5])
 }
 
 pub fn print_bitmap(bitmap: &Bitmap<U25>) {
@@ -273,4 +267,80 @@ pub fn print_bitmap(bitmap: &Bitmap<U25>) {
         }
     }
     println!("{}", repr)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test::Bencher;
+
+    #[test]
+    fn test_reverse_bitmap() {
+        assert_eq!(
+            reverse_bitmap(&Card::Eel.get_moves()),
+            Card::Cobra.get_moves()
+        )
+    }
+
+    #[bench]
+    fn bench_reverse_bitmap(b: &mut Bencher) {
+        b.iter(|| {
+            let card = test::black_box(Card::Eel.get_moves());
+            reverse_bitmap(&card)
+        });
+    }
+
+    #[test]
+    fn test_shift_bitmap() {
+        assert_eq!(
+            shift_bitmap(
+                &board!(
+                    1 0 0 0 1
+                    0 1 0 1 0
+                    0 0 1 0 0
+                    0 1 0 1 0
+                    1 0 0 0 1
+                ),
+                6
+            ),
+            board!(
+                1 0 1 0 0
+                0 1 0 0 0
+                1 0 1 0 0
+                0 0 0 1 0
+                0 0 0 0 0
+            )
+        )
+    }
+
+    #[test]
+    fn test_shift_bitmap2() {
+        assert_eq!(
+            shift_bitmap(
+                &board!(
+                    1 0 0 0 1
+                    0 1 0 1 0
+                    0 0 1 0 0
+                    0 1 0 1 0
+                    1 0 0 0 1
+                ),
+                18
+            ),
+            board!(
+                0 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 1
+                0 0 0 1 0
+                0 0 1 0 1
+            )
+        )
+    }
+
+    #[bench]
+    fn bench_shift_bitmap(b: &mut Bencher) {
+        b.iter(|| {
+            let card = test::black_box(Card::Eel.get_moves());
+            shift_bitmap(&card, 6)
+        });
+    }
 }
