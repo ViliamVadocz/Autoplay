@@ -27,7 +27,12 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(mut cards: Vec<Card>) -> Game {
+    pub fn new() -> Game {
+        let cards = draw_cards();
+        Game::from_cards(cards)
+    }
+
+    pub fn from_cards(mut cards: Vec<Card>) -> Game {
         let last_card = cards.pop().unwrap();
         let white_to_move = last_card.is_white();
         Game {
@@ -286,7 +291,7 @@ mod tests {
             Card::Boar,
             Card::Crab,
         ];
-        let game = test::black_box(Game::new(cards));
+        let game = test::black_box(Game::from_cards(cards));
 
         b.iter(|| game.gen_moves());
     }
