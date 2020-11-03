@@ -14,6 +14,7 @@ pub struct Move {
     pub used_left_card: bool,
 }
 
+#[derive(Clone)]
 pub struct Game {
     white: Bitmap<U25>,
     black: Bitmap<U25>,
@@ -273,10 +274,10 @@ mod tests {
     #[bench]
     fn bench_gen_moves(b: &mut Bencher) {
         let cards = vec![
-            Card::Horse,
-            Card::Elephant,
             Card::Ox,
             Card::Boar,
+            Card::Horse,
+            Card::Elephant,
             Card::Crab,
         ];
         let game = test::black_box(Game::from_cards(cards));
