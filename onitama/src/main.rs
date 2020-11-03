@@ -11,26 +11,23 @@ extern crate serde_derive;
 mod macros;
 mod bot;
 mod cards;
+mod connection;
 mod error;
 mod game;
 mod messages;
-mod connection;
 
 use crate::bot::get_move;
-use crate::error::{Result, UnexpectedMessage};
-use crate::game::Game;
 use crate::connection::Connection;
-use crate::messages::*;
-use websocket::client::sync::Client;
-use websocket::stream::sync::Stream;
-use websocket::{ClientBuilder, Message, OwnedMessage};
+use crate::error::Result;
+use crate::game::Game;
+use crate::messages::move_to_command;
 
 fn main() -> Result<()> {
     let mut conn1 = Connection::new("wss://litama.herokuapp.com")?;
     let (match_id, p1) = conn1.create_match()?;
     println!("match id: {}", match_id);
 
-    let mut conn2 = Connection::new("wss://litama.herokuapp.com")?;    
+    let mut conn2 = Connection::new("wss://litama.herokuapp.com")?;
     let p2 = conn2.join_match(&match_id)?;
 
     conn1.recv_state()?; // ignore one because we get two
