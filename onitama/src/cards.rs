@@ -229,7 +229,7 @@ pub fn draw_cards() -> Vec<Card> {
 }
 
 pub fn reverse_bitmap(board: &Bitmap<U25>) -> Bitmap<U25> {
-    let value = board.clone().into_value();
+    let value = board.into_value();
     let reversed = value.reverse_bits() >> 32 - 25;
     Bitmap::from_value(reversed)
 }
@@ -243,7 +243,7 @@ const SHIFT_MASK: [u32; 5] = [
 ];
 
 pub fn shift_bitmap(board: &Bitmap<U25>, pos: usize) -> Bitmap<U25> {
-    let value = board.clone().into_value();
+    let value = board.into_value();
     let shifted = if pos > 12 {
         value.overflowing_shl(pos as u32 - 12).0
     } else {
