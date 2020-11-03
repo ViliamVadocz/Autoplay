@@ -14,7 +14,7 @@ pub struct Move {
     pub used_left_card: bool,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Game {
     white: Bitmap<U25>,
     black: Bitmap<U25>,
@@ -131,7 +131,6 @@ impl Game {
         while let Some(from_pos) = pieces.first_index() {
             pieces.set(from_pos, false);
             let mut left_shifted = shift_bitmap(&left, from_pos) & !my_pieces;
-
             while let Some(to_pos) = left_shifted.first_index() {
                 left_shifted.set(to_pos, false);
                 moves.push(Move {
@@ -283,5 +282,20 @@ mod tests {
         let game = test::black_box(Game::from_cards(cards));
 
         b.iter(|| game.gen_moves());
+    }
+
+    #[bench]
+    fn bench_take_turn(b: &mut Bencher) {
+        let cards = vec![
+            Card::Ox,
+            Card::Boar,
+            Card::Horse,
+            Card::Elephant,
+            Card::Crab,
+        ];
+        let mut game = test::black_box(Game::from_cards(cards));
+        let m = test::black_box(game.gen_moves().pop().unwrap());
+
+        b.iter(|| game.take_turn(&m));
     }
 }
