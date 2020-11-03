@@ -1,4 +1,5 @@
 use bitmaps::Bitmap;
+use smallvec::SmallVec;
 use typenum::U25;
 
 use crate::cards::{draw_cards, reverse_bitmap, shift_bitmap, Card};
@@ -26,8 +27,7 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new() -> Game {
-        let mut cards = draw_cards();
+    pub fn new(mut cards: Vec<Card>) -> Game {
         let last_card = cards.pop().unwrap();
         let white_to_move = last_card.is_white();
         Game {
@@ -104,11 +104,11 @@ impl Game {
         self.in_progress = opp_king != my_move.to && *my_king != goal_pos;
     }
 
-    pub fn gen_moves(&self) -> Vec<Move> {
+    pub fn gen_moves(&self) -> SmallVec<[Move; 36]> {
         let (my_cards, my_pieces, my_king) = if self.white_to_move {
-            (&self.white_cards, &self.white, self.white_king)
+            (self.white_cards, self.white, self.white_king)
         } else {
-            (&self.black_cards, &self.black, self.black_king)
+            (self.black_cards, self.black, self.black_king)
         };
 
         // get cards
@@ -119,31 +119,41 @@ impl Game {
             right = reverse_bitmap(&right);
         }
 
-        let mut moves = Vec::new();
+        let mut moves = SmallVec::new();
         // for every one of my pieces, try each card
-        for from_pos in 0..25 {
-            if my_pieces.get(from_pos) {
-                let left_shifted = shift_bitmap(&left, from_pos);
-                let right_shifted = shift_bitmap(&right, from_pos);
-                for to_pos in 0..25 {
-                    // cannot go to a position already occupied by my piece
-                    if !my_pieces.get(to_pos) {
-                        if left_shifted.get(to_pos) {
-                            moves.push(Move {
-                                from: from_pos,
-                                to: to_pos,
-                                used_left_card: true,
-                            });
-                        }
-                        if right_shifted.get(to_pos) {
-                            moves.push(Move {
-                                from: from_pos,
-                                to: to_pos,
-                                used_left_card: false,
-                            });
-                        }
-                    }
+        let my_pieces = my_pieces.into_value();
+        let mut pieces = my_pieces;
+        loop {
+            let from_pos = pieces.trailing_zeros() as usize;
+            if from_pos == 32 {
+                break;
+            };
+            pieces ^= 1 << from_pos;
+            let mut left_shifted = shift_bitmap(&left, from_pos).into_value() & !my_pieces;
+            loop {
+                let to_pos = left_shifted.trailing_zeros() as usize;
+                if to_pos == 32 {
+                    break;
                 }
+                left_shifted ^= 1 << to_pos;
+                moves.push(Move {
+                    from: from_pos,
+                    to: to_pos,
+                    used_left_card: true,
+                });
+            }
+            let mut right_shifted = shift_bitmap(&right, from_pos).into_value() & !my_pieces;
+            loop {
+                let to_pos = right_shifted.trailing_zeros() as usize;
+                if to_pos == 32 {
+                    break;
+                }
+                right_shifted ^= 1 << to_pos;
+                moves.push(Move {
+                    from: from_pos,
+                    to: to_pos,
+                    used_left_card: false,
+                });
             }
         }
         // if no available moves, you can skip, but you still need to use a card
@@ -259,5 +269,25 @@ impl Game {
             white_to_move,
             in_progress,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test::Bencher;
+
+    #[bench]
+    fn bench_gen_moves(b: &mut Bencher) {
+        let cards = vec![
+            Card::Horse,
+            Card::Elephant,
+            Card::Ox,
+            Card::Boar,
+            Card::Crab,
+        ];
+        let game = test::black_box(Game::new(cards));
+
+        b.iter(|| game.gen_moves());
     }
 }
