@@ -1,9 +1,10 @@
 use bitmaps::Bitmap;
 use typenum::U25;
 
+use crate::cards::{draw_cards, reverse_bitmap, shift_bitmap, Card};
+use crate::error::Result;
+use crate::messages::*;
 use std::fmt;
-
-use crate::cards::{Card, draw_cards, reverse_bitmap, shift_bitmap};
 
 #[derive(Debug)]
 pub struct Move {
@@ -17,22 +18,21 @@ pub struct Game {
     black: Bitmap<U25>,
     white_king: usize,
     black_king: usize,
-    white_cards: [Card; 2],
-    black_cards: [Card; 2],
+    pub white_cards: [Card; 2],
+    pub black_cards: [Card; 2],
     table_card: Card,
-    white_to_move: bool,
+    pub white_to_move: bool,
     pub in_progress: bool,
 }
 
 impl Game {
     pub fn new() -> Game {
-        // TODO: Generate cards
         let mut cards = draw_cards();
         let last_card = cards.pop().unwrap();
         let white_to_move = last_card.is_white();
         Game {
             white: board!(
-                0 0 0 0 0 
+                0 0 0 0 0
                 0 0 0 0 0
                 0 0 0 0 0
                 0 0 0 0 0
@@ -55,13 +55,27 @@ impl Game {
         }
     }
 
-    pub fn take_turn(&mut self, my_move: Move) {
+    pub fn take_turn(&mut self, my_move: &Move) {
         // TODO maybe do move validation?
 
         let (my_board, my_king, my_cards, opp_board, opp_king, goal_pos) = if self.white_to_move {
-            (&mut self.white, &mut self.white_king, &mut self.white_cards, &mut self.black, self.black_king, 2)
+            (
+                &mut self.white,
+                &mut self.white_king,
+                &mut self.white_cards,
+                &mut self.black,
+                self.black_king,
+                2,
+            )
         } else {
-            (&mut self.black, &mut self.black_king, &mut self.black_cards, &mut self.white, self.white_king, 22)
+            (
+                &mut self.black,
+                &mut self.black_king,
+                &mut self.black_cards,
+                &mut self.white,
+                self.white_king,
+                22,
+            )
         };
 
         // move my piece
@@ -104,7 +118,7 @@ impl Game {
             left = reverse_bitmap(&left);
             right = reverse_bitmap(&right);
         }
-        
+
         let mut moves = Vec::new();
         // for every one of my pieces, try each card
         for from_pos in 0..25 {
@@ -115,10 +129,18 @@ impl Game {
                     // cannot go to a position already occupied by my piece
                     if !my_pieces.get(to_pos) {
                         if left_shifted.get(to_pos) {
-                            moves.push(Move {from: from_pos, to: to_pos, used_left_card: true});
+                            moves.push(Move {
+                                from: from_pos,
+                                to: to_pos,
+                                used_left_card: true,
+                            });
                         }
                         if right_shifted.get(to_pos) {
-                            moves.push(Move {from: from_pos, to: to_pos, used_left_card: false});
+                            moves.push(Move {
+                                from: from_pos,
+                                to: to_pos,
+                                used_left_card: false,
+                            });
                         }
                     }
                 }
@@ -126,8 +148,16 @@ impl Game {
         }
         // if no available moves, you can skip, but you still need to use a card
         if moves.is_empty() {
-            moves.push(Move {from: my_king, to: my_king, used_left_card: true});
-            moves.push(Move {from: my_king, to: my_king, used_left_card: false});
+            moves.push(Move {
+                from: my_king,
+                to: my_king,
+                used_left_card: true,
+            });
+            moves.push(Move {
+                from: my_king,
+                to: my_king,
+                used_left_card: false,
+            });
         }
 
         moves
@@ -176,5 +206,58 @@ impl fmt::Display for Game {
         output.push_str(&format!("Table card: {:?}\n", self.table_card));
 
         write!(f, "{}", output)
+    }
+}
+
+impl Game {
+    pub fn from_state_msg(state_msg: StateMsg) -> Result<Game> {
+        let mut white = Bitmap::new();
+        let mut black = Bitmap::new();
+        let mut white_king = 0;
+        let mut black_king = 0;
+        for (i, character) in (0..25).zip(state_msg.board.chars()) {
+            match character {
+                '0' => {}
+                '1' => {
+                    black.set(i, true);
+                }
+                '2' => {
+                    black.set(i, true);
+                    black_king = i;
+                }
+                '3' => {
+                    white.set(i, true);
+                }
+                '4' => {
+                    white.set(i, true);
+                    white_king = i;
+                }
+                _ => {}
+            };
+        }
+
+        let white_to_move = color_is_white(state_msg.current_turn)?;
+        let white_cards = [
+            Card::from_text(&state_msg.cards.red[0])?,
+            Card::from_text(&state_msg.cards.red[1])?,
+        ];
+        let black_cards = [
+            Card::from_text(&state_msg.cards.blue[0])?,
+            Card::from_text(&state_msg.cards.blue[1])?,
+        ];
+        let table_card = Card::from_text(&state_msg.cards.side)?;
+        let in_progress = is_in_progress(state_msg.game_state)?;
+
+        Ok(Game {
+            white,
+            black,
+            white_king,
+            black_king,
+            white_cards,
+            black_cards,
+            table_card,
+            white_to_move,
+            in_progress,
+        })
     }
 }
