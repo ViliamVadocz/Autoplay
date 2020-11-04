@@ -112,8 +112,8 @@ pub fn move_to_command(my_move: &Move, match_id: &str, token: &str, game: &Game)
     command.push_str(token);
     command.push(' ');
     // from:to
-    command.push_str(&translate_pos(my_move.from));
-    command.push_str(&translate_pos(my_move.to));
+    command.push_str(&translate_pos(my_move.from as usize));
+    command.push_str(&translate_pos(my_move.to as usize));
     command.push(' ');
     // card
     let my_cards = if game.white_to_move {

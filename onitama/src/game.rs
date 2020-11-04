@@ -9,8 +9,8 @@ use std::fmt;
 
 #[derive(Debug)]
 pub struct Move {
-    pub from: usize,
-    pub to: usize,
+    pub from: u8,
+    pub to: u8,
     pub used_left_card: bool,
 }
 
@@ -18,8 +18,8 @@ pub struct Move {
 pub struct Game {
     white: Bitmap<U25>,
     black: Bitmap<U25>,
-    white_king: usize,
-    black_king: usize,
+    white_king: u8,
+    black_king: u8,
     pub white_cards: [Card; 2],
     pub black_cards: [Card; 2],
     table_card: Card,
@@ -85,14 +85,14 @@ impl Game {
         };
 
         // move my piece
-        my_board.set(my_move.from, false);
-        my_board.set(my_move.to, true);
+        my_board.set(my_move.from as usize, false);
+        my_board.set(my_move.to as usize, true);
         // move king
         if *my_king == my_move.from {
             *my_king = my_move.to;
         }
         // remove enemy piece if it is there
-        opp_board.set(my_move.to, false);
+        opp_board.set(my_move.to as usize, false);
 
         // card management
         let (used_card, kept_card) = if my_move.used_left_card {
@@ -134,8 +134,8 @@ impl Game {
             while let Some(to_pos) = left_shifted.first_index() {
                 left_shifted.set(to_pos, false);
                 moves.push(Move {
-                    from: from_pos,
-                    to: to_pos,
+                    from: from_pos as u8,
+                    to: to_pos as u8,
                     used_left_card: true,
                 });
             }
@@ -143,8 +143,8 @@ impl Game {
             while let Some(to_pos) = right_shifted.first_index() {
                 right_shifted.set(to_pos, false);
                 moves.push(Move {
-                    from: from_pos,
-                    to: to_pos,
+                    from: from_pos as u8,
+                    to: to_pos as u8,
                     used_left_card: false,
                 });
             }
@@ -181,13 +181,13 @@ impl fmt::Display for Game {
         // board
         let mut board = String::new();
         for i in 0..25 {
-            if self.white.get(i) {
+            if self.white.get(i as usize) {
                 if i == self.white_king {
                     board.push('♔');
                 } else {
                     board.push('♙');
                 }
-            } else if self.black.get(i) {
+            } else if self.black.get(i as usize) {
                 if i == self.black_king {
                     board.push('♚');
                 } else {
@@ -222,17 +222,17 @@ impl Game {
             match character {
                 '0' => {}
                 '1' => {
-                    black.set(i, true);
+                    black.set(i as usize, true);
                 }
                 '2' => {
-                    black.set(i, true);
+                    black.set(i as usize, true);
                     black_king = i;
                 }
                 '3' => {
-                    white.set(i, true);
+                    white.set(i as usize, true);
                 }
                 '4' => {
-                    white.set(i, true);
+                    white.set(i as usize, true);
                     white_king = i;
                 }
                 _ => {}
