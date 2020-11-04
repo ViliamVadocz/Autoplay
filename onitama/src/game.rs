@@ -14,15 +14,15 @@ pub struct Move {
     pub used_left_card: bool,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Game {
-    white: Bitmap<U25>,
-    black: Bitmap<U25>,
-    white_king: usize,
-    black_king: usize,
+    pub white: Bitmap<U25>,
+    pub black: Bitmap<U25>,
+    pub white_king: usize,
+    pub black_king: usize,
     pub white_cards: [Card; 2],
     pub black_cards: [Card; 2],
-    table_card: Card,
+    pub table_card: Card,
     pub white_to_move: bool,
     pub in_progress: bool,
 }
