@@ -21,7 +21,7 @@ pub struct Player {
     king: u8,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Game {
     pub white: Player,
     pub black: Player,
@@ -112,19 +112,19 @@ impl Game {
     }
 
     pub fn gen_moves(&self) -> SmallVec<[Move; 36]> {
-        let my = if self.white_to_move {
-            &self.white
+        let (my, left, right) = if self.white_to_move {
+            (
+                &self.white,
+                self.white.cards[0].get_moves(),
+                self.white.cards[1].get_moves(),
+            )
         } else {
-            &self.black
+            (
+                &self.black,
+                self.black.cards[0].get_reverse_moves(),
+                self.black.cards[1].get_reverse_moves(),
+            )
         };
-
-        // get cards
-        let mut left = my.cards[0].get_moves();
-        let mut right = my.cards[1].get_moves();
-        if !self.white_to_move {
-            left = reverse_bitmap(left);
-            right = reverse_bitmap(right);
-        }
 
         let mut moves = SmallVec::new();
         // for every one of my pieces, try each card
@@ -168,20 +168,20 @@ impl Game {
     }
 
     pub fn count_moves(&self) -> usize {
-        let my = if self.white_to_move {
-            &self.white
+        let (my, left, right) = if self.white_to_move {
+            (
+                &self.white,
+                self.white.cards[0].get_moves(),
+                self.white.cards[1].get_moves(),
+            )
         } else {
-            &self.black
+            (
+                &self.black,
+                self.black.cards[0].get_reverse_moves(),
+                self.black.cards[1].get_reverse_moves(),
+            )
         };
         let mut total = 0;
-
-        // get cards
-        let mut left = my.cards[0].get_moves();
-        let mut right = my.cards[1].get_moves();
-        if !self.white_to_move {
-            left = reverse_bitmap(left);
-            right = reverse_bitmap(right);
-        }
 
         // for every one of my pieces, try each card
         let mut pieces = my.pieces;

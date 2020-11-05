@@ -129,6 +129,108 @@ impl Card {
         }
     }
 
+    #[rustfmt::skip]
+    pub fn get_reverse_moves(self) -> Bitmap<U25> {
+        match self {
+            Card::Boar =>
+                board!(0 0 0 0 0
+                       0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 1 0 0
+                       0 0 0 0 0),
+            Card::Cobra =>
+                board!(0 0 0 0 0
+                       0 1 0 0 0
+                       0 0 0 1 0
+                       0 1 0 0 0
+                       0 0 0 0 0),
+            Card::Crab =>
+                board!(0 0 0 0 0
+                       0 0 0 0 0
+                       1 0 0 0 1
+                       0 0 1 0 0
+                       0 0 0 0 0),
+            Card::Crane =>
+                board!(0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0
+                       0 0 1 0 0
+                       0 0 0 0 0),
+            Card::Dragon =>
+                board!(0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0
+                       1 0 0 0 1
+                       0 0 0 0 0),
+            Card::Eel =>
+                board!(0 0 0 0 0
+                       0 0 0 1 0
+                       0 1 0 0 0
+                       0 0 0 1 0
+                       0 0 0 0 0),
+            Card::Elephant =>
+                board!(0 0 0 0 0
+                       0 0 0 0 0
+                       0 1 0 1 0
+                       0 1 0 1 0
+                       0 0 0 0 0),
+            Card::Frog =>
+                board!(0 0 0 0 0
+                       0 1 0 0 0
+                       0 0 0 0 1
+                       0 0 0 1 0
+                       0 0 0 0 0),
+            Card::Goose =>
+                board!(0 0 0 0 0
+                       0 1 0 0 0
+                       0 1 0 1 0
+                       0 0 0 1 0
+                       0 0 0 0 0),
+            Card::Horse =>
+                board!(0 0 0 0 0
+                       0 0 1 0 0
+                       0 0 0 1 0
+                       0 0 1 0 0
+                       0 0 0 0 0),
+            Card::Mantis =>
+                board!(0 0 0 0 0
+                       0 0 1 0 0
+                       0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0),
+            Card::Monkey =>
+                board!(0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0),
+            Card::Ox =>
+                board!(0 0 0 0 0
+                       0 0 1 0 0
+                       0 1 0 0 0
+                       0 0 1 0 0
+                       0 0 0 0 0),
+            Card::Rabbit =>
+                board!(0 0 0 0 0
+                       0 0 0 1 0
+                       0 0 0 0 1
+                       0 1 0 0 0
+                       0 0 0 0 0),
+            Card::Rooster =>
+                board!(0 0 0 0 0
+                       0 0 0 1 0
+                       0 1 0 1 0
+                       0 1 0 0 0
+                       0 0 0 0 0),
+            Card::Tiger =>
+                board!(0 0 0 0 0
+                       0 0 1 0 0
+                       0 0 0 0 0
+                       0 0 0 0 0
+                       0 0 1 0 0),
+        }
+    }
+
     pub fn is_white(self) -> bool {
         match self {
             Card::Boar => true,

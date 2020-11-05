@@ -37,7 +37,7 @@ fn main() -> Result<()> {
     while this_game.in_progress {
         println!("{}", this_game);
         // TEMP same bot for both sides
-        let my_move = get_move(this_game);
+        let my_move = get_move(&this_game);
 
         if this_game.white_to_move == p1.white {
             conn1.send(&move_to_command(&my_move, &match_id, &p1.token, &this_game))?;
