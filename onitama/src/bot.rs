@@ -37,10 +37,27 @@ pub fn game_eval(g: Game) -> i64 {
 }
 
 pub fn eval_move(g: &Game, the_move: &Move, depth: u8) -> i64 {
-    let mut new_g = g.clone();
-    new_g.take_turn(the_move);
-    // TODO
-    0
+    let new_g = g.take_turn(the_move);
+    if !new_g.in_progress || depth == 0 {
+        game_eval(new_g)
+    } else {
+        let mut white_best = i64::MIN;
+        let mut black_best = i64::MAX;
+        for m in new_g.gen_moves().iter() {
+            let eval = eval_move(&new_g, m, depth - 1);
+            if eval > white_best {
+                white_best = eval;
+            } else if eval < black_best {
+                black_best = eval;
+            }
+        }
+
+        if new_g.white_to_move {
+            white_best
+        } else {
+            black_best
+        }
+    }
 }
 
 pub fn get_move(g: &Game) -> Move {
@@ -64,6 +81,21 @@ pub fn get_move(g: &Game) -> Move {
 }
 
 pub fn perft(g: &Game, depth: u8) -> usize {
+    if !g.in_progress || depth == 0 {
+        1
+    } else {
+        let moves = g.gen_moves();
+        moves
+            .iter()
+            .map(|m| {
+                let new_g = g.take_turn(m);
+                perft(&new_g, depth - 1)
+            })
+            .sum()
+    }
+}
+
+pub fn perft_cheat(g: &Game, depth: u8) -> usize {
     if !g.in_progress {
         1
     } else if depth == 1 {
@@ -74,7 +106,7 @@ pub fn perft(g: &Game, depth: u8) -> usize {
             .iter()
             .map(|m| {
                 let new_g = g.take_turn(m);
-                perft(&new_g, depth - 1)
+                perft_cheat(&new_g, depth - 1)
             })
             .sum()
     }
@@ -97,14 +129,14 @@ mod tests {
     #[test]
     fn test_pertf() {
         let game = Game::from_cards(Vec::from(CARDS));
-        assert_eq!(perft(&game, 1), 10);
-        assert_eq!(perft(&game, 2), 130);
-        assert_eq!(perft(&game, 3), 1989);
-        assert_eq!(perft(&game, 4), 28509);
-        assert_eq!(perft(&game, 5), 487780);
-        assert_eq!(perft(&game, 6), 7748422);
-        assert_eq!(perft(&game, 7), 137281607);
-        assert_eq!(perft(&game, 8), 2353802670);
+        assert_eq!(perft_cheat(&game, 1), 10);
+        assert_eq!(perft_cheat(&game, 2), 130);
+        assert_eq!(perft_cheat(&game, 3), 1989);
+        assert_eq!(perft_cheat(&game, 4), 28509);
+        assert_eq!(perft_cheat(&game, 5), 487780);
+        assert_eq!(perft_cheat(&game, 6), 7748422);
+        assert_eq!(perft_cheat(&game, 7), 137281607);
+        assert_eq!(perft_cheat(&game, 8), 2353802670);
     }
 
     #[bench]
