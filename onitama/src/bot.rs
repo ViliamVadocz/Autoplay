@@ -13,8 +13,7 @@ pub fn perft(g: Game, depth: u64) -> u64 {
         moves
             .iter()
             .map(|m| {
-                let mut new_g = g;
-                new_g.take_turn(m);
+                let new_g = g.take_turn(m);
                 perft(new_g, depth - 1)
             })
             .sum()
