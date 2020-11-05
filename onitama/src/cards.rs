@@ -28,7 +28,7 @@ pub enum Card {
 
 impl Card {
     #[rustfmt::skip]
-    pub fn get_moves(&self) -> Bitmap<U25> {
+    pub fn get_moves(self) -> Bitmap<U25> {
         match self {
             Card::Boar =>
                 board!(0 0 0 0 0
@@ -129,7 +129,109 @@ impl Card {
         }
     }
 
-    pub fn is_white(&self) -> bool {
+    #[rustfmt::skip]
+    pub fn get_reverse_moves(self) -> Bitmap<U25> {
+        match self {
+            Card::Boar =>
+                board!(0 0 0 0 0
+                       0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 1 0 0
+                       0 0 0 0 0),
+            Card::Cobra =>
+                board!(0 0 0 0 0
+                       0 1 0 0 0
+                       0 0 0 1 0
+                       0 1 0 0 0
+                       0 0 0 0 0),
+            Card::Crab =>
+                board!(0 0 0 0 0
+                       0 0 0 0 0
+                       1 0 0 0 1
+                       0 0 1 0 0
+                       0 0 0 0 0),
+            Card::Crane =>
+                board!(0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0
+                       0 0 1 0 0
+                       0 0 0 0 0),
+            Card::Dragon =>
+                board!(0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0
+                       1 0 0 0 1
+                       0 0 0 0 0),
+            Card::Eel =>
+                board!(0 0 0 0 0
+                       0 0 0 1 0
+                       0 1 0 0 0
+                       0 0 0 1 0
+                       0 0 0 0 0),
+            Card::Elephant =>
+                board!(0 0 0 0 0
+                       0 0 0 0 0
+                       0 1 0 1 0
+                       0 1 0 1 0
+                       0 0 0 0 0),
+            Card::Frog =>
+                board!(0 0 0 0 0
+                       0 1 0 0 0
+                       0 0 0 0 1
+                       0 0 0 1 0
+                       0 0 0 0 0),
+            Card::Goose =>
+                board!(0 0 0 0 0
+                       0 1 0 0 0
+                       0 1 0 1 0
+                       0 0 0 1 0
+                       0 0 0 0 0),
+            Card::Horse =>
+                board!(0 0 0 0 0
+                       0 0 1 0 0
+                       0 0 0 1 0
+                       0 0 1 0 0
+                       0 0 0 0 0),
+            Card::Mantis =>
+                board!(0 0 0 0 0
+                       0 0 1 0 0
+                       0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0),
+            Card::Monkey =>
+                board!(0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0
+                       0 1 0 1 0
+                       0 0 0 0 0),
+            Card::Ox =>
+                board!(0 0 0 0 0
+                       0 0 1 0 0
+                       0 1 0 0 0
+                       0 0 1 0 0
+                       0 0 0 0 0),
+            Card::Rabbit =>
+                board!(0 0 0 0 0
+                       0 0 0 1 0
+                       0 0 0 0 1
+                       0 1 0 0 0
+                       0 0 0 0 0),
+            Card::Rooster =>
+                board!(0 0 0 0 0
+                       0 0 0 1 0
+                       0 1 0 1 0
+                       0 1 0 0 0
+                       0 0 0 0 0),
+            Card::Tiger =>
+                board!(0 0 0 0 0
+                       0 0 1 0 0
+                       0 0 0 0 0
+                       0 0 0 0 0
+                       0 0 1 0 0),
+        }
+    }
+
+    pub fn is_white(self) -> bool {
         match self {
             Card::Boar => true,
             Card::Cobra => true,
@@ -150,7 +252,7 @@ impl Card {
         }
     }
 
-    pub fn get_name(&self) -> &str {
+    pub fn get_name(self) -> &'static str {
         match self {
             Card::Boar => "boar",
             Card::Cobra => "cobra",
@@ -228,7 +330,7 @@ pub fn draw_cards() -> Vec<Card> {
     drawn
 }
 
-pub fn reverse_bitmap(board: &Bitmap<U25>) -> Bitmap<U25> {
+pub fn reverse_bitmap(board: Bitmap<U25>) -> Bitmap<U25> {
     let value = board.into_value();
     let reversed = value.reverse_bits() >> 32 - 25;
     Bitmap::from_value(reversed)
@@ -242,7 +344,7 @@ const SHIFT_MASK: [u32; 5] = [
     0b11100_11100_11100_11100_11100,
 ];
 
-pub fn shift_bitmap(board: &Bitmap<U25>, pos: usize) -> Bitmap<U25> {
+pub fn shift_bitmap(board: Bitmap<U25>, pos: usize) -> Bitmap<U25> {
     let value = board.into_value();
     let shifted = if pos > 12 {
         value.overflowing_shl(pos as u32 - 12).0
@@ -277,7 +379,7 @@ mod tests {
     #[test]
     fn test_reverse_bitmap() {
         assert_eq!(
-            reverse_bitmap(&Card::Eel.get_moves()),
+            reverse_bitmap(Card::Eel.get_moves()),
             Card::Cobra.get_moves()
         )
     }
@@ -286,7 +388,7 @@ mod tests {
     fn bench_reverse_bitmap(b: &mut Bencher) {
         b.iter(|| {
             let card = test::black_box(Card::Eel.get_moves());
-            reverse_bitmap(&card)
+            reverse_bitmap(card)
         });
     }
 
@@ -294,7 +396,7 @@ mod tests {
     fn test_shift_bitmap() {
         assert_eq!(
             shift_bitmap(
-                &board!(
+                board!(
                     1 0 0 0 1
                     0 1 0 1 0
                     0 0 1 0 0
@@ -317,7 +419,7 @@ mod tests {
     fn test_shift_bitmap2() {
         assert_eq!(
             shift_bitmap(
-                &board!(
+                board!(
                     1 0 0 0 1
                     0 1 0 1 0
                     0 0 1 0 0
@@ -340,7 +442,7 @@ mod tests {
     fn bench_shift_bitmap(b: &mut Bencher) {
         b.iter(|| {
             let card = test::black_box(Card::Eel.get_moves());
-            shift_bitmap(&card, 6)
+            shift_bitmap(card, 6)
         });
     }
 }
