@@ -5,7 +5,7 @@ use websocket::result::WebSocketResult;
 use websocket::sync::{client::Client, stream::NetworkStream};
 use websocket::{ClientBuilder, Message, OwnedMessage};
 
-pub struct Player {
+pub struct Participant {
     pub token: String,
     pub white: bool,
 }
@@ -37,13 +37,13 @@ impl Connection {
         Ok(message)
     }
 
-    pub fn create_match(&mut self) -> Result<(String, Player)> {
+    pub fn create_match(&mut self) -> Result<(String, Participant)> {
         self.send("create")?;
         let message = self.recv()?;
         if let LitamaMessage::Create(msg) = message {
             Ok((
                 msg.match_id,
-                Player {
+                Participant {
                     token: msg.token,
                     white: color_is_white(msg.color)?,
                 },
@@ -53,11 +53,11 @@ impl Connection {
         }
     }
 
-    pub fn join_match(&mut self, match_id: &str) -> Result<Player> {
+    pub fn join_match(&mut self, match_id: &str) -> Result<Participant> {
         self.send(&format!("join {}", match_id))?;
         let message = self.recv()?;
         if let LitamaMessage::Join(msg) = message {
-            Ok(Player {
+            Ok(Participant {
                 token: msg.token,
                 white: color_is_white(msg.color)?,
             })
