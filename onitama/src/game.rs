@@ -122,8 +122,8 @@ impl Game {
         let mut left = my.cards[0].get_moves();
         let mut right = my.cards[1].get_moves();
         if !self.white_to_move {
-            left = reverse_bitmap(&left);
-            right = reverse_bitmap(&right);
+            left = reverse_bitmap(left);
+            right = reverse_bitmap(right);
         }
 
         let mut moves = SmallVec::new();
@@ -131,7 +131,7 @@ impl Game {
         let mut pieces = my.pieces;
         while let Some(from_pos) = pieces.first_index() {
             pieces.set(from_pos, false);
-            let mut left_shifted = shift_bitmap(&left, from_pos) & !my.pieces;
+            let mut left_shifted = shift_bitmap(left, from_pos) & !my.pieces;
             while let Some(to_pos) = left_shifted.first_index() {
                 left_shifted.set(to_pos, false);
                 moves.push(Move {
@@ -140,7 +140,7 @@ impl Game {
                     used_left_card: true,
                 });
             }
-            let mut right_shifted = shift_bitmap(&right, from_pos) & !my.pieces;
+            let mut right_shifted = shift_bitmap(right, from_pos) & !my.pieces;
             while let Some(to_pos) = right_shifted.first_index() {
                 right_shifted.set(to_pos, false);
                 moves.push(Move {
@@ -165,6 +165,37 @@ impl Game {
         }
 
         moves
+    }
+
+    pub fn count_moves(&self) -> usize {
+        let my = if self.white_to_move {
+            &self.white
+        } else {
+            &self.black
+        };
+        let mut total = 0;
+
+        // get cards
+        let mut left = my.cards[0].get_moves();
+        let mut right = my.cards[1].get_moves();
+        if !self.white_to_move {
+            left = reverse_bitmap(left);
+            right = reverse_bitmap(right);
+        }
+
+        // for every one of my pieces, try each card
+        let mut pieces = my.pieces;
+        while let Some(from_pos) = pieces.first_index() {
+            pieces.set(from_pos, false);
+            total += (shift_bitmap(left, from_pos) & !my.pieces).len();
+            total += (shift_bitmap(right, from_pos) & !my.pieces).len();
+        }
+        // if no available moves, you can skip, but you still need to use a card
+        if total != 0 {
+            total
+        } else {
+            2
+        }
     }
 }
 

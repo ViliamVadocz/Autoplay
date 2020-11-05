@@ -20,15 +20,15 @@ pub fn game_eval(g: Game) -> i64 {
         let mut pieces = g.white.pieces;
         while let Some(pos) = pieces.first_index() {
             pieces.set(pos, false);
-            white_control |= shift_bitmap(&g.white.cards[0].get_moves(), pos);
-            white_control |= shift_bitmap(&g.white.cards[1].get_moves(), pos);
+            white_control |= shift_bitmap(g.white.cards[0].get_moves(), pos);
+            white_control |= shift_bitmap(g.white.cards[1].get_moves(), pos);
         }
         let mut black_control = Bitmap::new();
         let mut pieces = g.black.pieces;
         while let Some(pos) = pieces.first_index() {
             pieces.set(pos, false);
-            black_control |= shift_bitmap(&reverse_bitmap(&g.black.cards[0].get_moves()), pos);
-            black_control |= shift_bitmap(&reverse_bitmap(&g.black.cards[1].get_moves()), pos);
+            black_control |= shift_bitmap(reverse_bitmap(g.black.cards[0].get_moves()), pos);
+            black_control |= shift_bitmap(reverse_bitmap(g.black.cards[1].get_moves()), pos);
         }
         let square_diff = (white_control.len() - black_control.len()) as i64;
         let piece_diff = (g.white.pieces.len() - g.black.pieces.len()) as i64;
@@ -63,9 +63,11 @@ pub fn get_move(g: Game) -> Move {
     }
 }
 
-pub fn perft(g: Game, depth: u8) -> u64 {
-    if depth == 0 || !g.in_progress {
+pub fn perft(g: Game, depth: u8) -> usize {
+    if !g.in_progress {
         1
+    } else if depth == 1 {
+        g.count_moves()
     } else {
         let moves = g.gen_moves();
         moves

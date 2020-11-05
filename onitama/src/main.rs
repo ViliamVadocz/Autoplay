@@ -49,7 +49,7 @@ fn main() -> Result<()> {
             println!("{:#?}", conn2.recv()?);
         }
 
-        this_game.take_turn(&my_move);
+        this_game = this_game.take_turn(&my_move);
     }
 
     Ok(())
