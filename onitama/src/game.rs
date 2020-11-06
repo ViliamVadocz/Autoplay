@@ -1,5 +1,5 @@
+use arrayvec::ArrayVec;
 use bitmaps::Bitmap;
-use smallvec::SmallVec;
 use typenum::U25;
 
 use crate::cards::{draw_cards, shift_bitmap, Card};
@@ -111,7 +111,7 @@ impl Game {
         }
     }
 
-    pub fn gen_moves(&self) -> SmallVec<[Move; 36]> {
+    pub fn gen_moves(&self) -> ArrayVec<[Move; 40]> {
         let (my, left, right) = if self.white_to_move {
             (
                 &self.white,
@@ -126,7 +126,7 @@ impl Game {
             )
         };
 
-        let mut moves = SmallVec::new();
+        let mut moves = ArrayVec::new();
         // for every one of my pieces, try each card
         let mut pieces = my.pieces;
         while let Some(from_pos) = pieces.first_index() {
