@@ -2,7 +2,7 @@ use bitmaps::Bitmap;
 use smallvec::SmallVec;
 use typenum::U25;
 
-use crate::cards::{draw_cards, reverse_bitmap, shift_bitmap, Card};
+use crate::cards::{draw_cards, shift_bitmap, Card};
 use crate::error::Result;
 use crate::messages::*;
 use std::fmt;
@@ -115,14 +115,14 @@ impl Game {
         let (my, left, right) = if self.white_to_move {
             (
                 &self.white,
-                self.white.cards[0].get_moves(),
-                self.white.cards[1].get_moves(),
+                self.white.cards[0].get_white(),
+                self.white.cards[1].get_white(),
             )
         } else {
             (
                 &self.black,
-                self.black.cards[0].get_reverse_moves(),
-                self.black.cards[1].get_reverse_moves(),
+                self.black.cards[0].get_black(),
+                self.black.cards[1].get_black(),
             )
         };
 
@@ -171,14 +171,14 @@ impl Game {
         let (my, left, right) = if self.white_to_move {
             (
                 &self.white,
-                self.white.cards[0].get_moves(),
-                self.white.cards[1].get_moves(),
+                self.white.cards[0].get_white(),
+                self.white.cards[1].get_white(),
             )
         } else {
             (
                 &self.black,
-                self.black.cards[0].get_reverse_moves(),
-                self.black.cards[1].get_reverse_moves(),
+                self.black.cards[0].get_black(),
+                self.black.cards[1].get_black(),
             )
         };
         let mut total = 0;
