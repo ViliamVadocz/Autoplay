@@ -169,13 +169,17 @@ pub fn draw_cards() -> Vec<Card> {
     drawn
 }
 
-const SHIFT_MASK: [u32; 5] = [
-    0b00111_00111_00111_00111_00111,
-    0b01111_01111_01111_01111_01111,
-    0b11111_11111_11111_11111_11111,
-    0b11110_11110_11110_11110_11110,
-    0b11100_11100_11100_11100_11100,
-];
+const fn shift_mask(pos: usize) -> u32 {
+    [
+        0b00111_00111_00111_00111_00111,
+        0b01111_01111_01111_01111_01111,
+        0b11111_11111_11111_11111_11111,
+        0b11110_11110_11110_11110_11110,
+        0b11100_11100_11100_11100_11100,
+    ][pos % 5]
+}
+
+const SHIFT_MASK: [u32; 25] = array_const_fn_init![shift_mask; 25];
 
 pub fn shift_bitmap(board: Bitmap<U25>, pos: usize) -> Bitmap<U25> {
     let value = board.into_value();
@@ -184,7 +188,7 @@ pub fn shift_bitmap(board: Bitmap<U25>, pos: usize) -> Bitmap<U25> {
     } else {
         value.overflowing_shr(12 - pos as u32).0
     };
-    Bitmap::from_value(shifted & SHIFT_MASK[pos % 5])
+    Bitmap::from_value(shifted & SHIFT_MASK[pos])
 }
 
 pub fn print_bitmap(bitmap: &Bitmap<U25>) {
