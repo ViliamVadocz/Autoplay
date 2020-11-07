@@ -30,8 +30,8 @@ pub fn game_eval(g: Game) -> i64 {
             black_control |= shift_bitmap(reverse_bitmap(g.black.cards[0].get_moves()), pos);
             black_control |= shift_bitmap(reverse_bitmap(g.black.cards[1].get_moves()), pos);
         }
-        let square_diff = (white_control.len() - black_control.len()) as i64;
-        let piece_diff = (g.white.pieces.len() - g.black.pieces.len()) as i64;
+        let square_diff = white_control.len() as i64 - black_control.len() as i64;
+        let piece_diff = g.white.pieces.len() as i64 - g.black.pieces.len() as i64;
         PIECE_WEIGHT * piece_diff + SQUARE_WEIGHT * square_diff
     }
 }
