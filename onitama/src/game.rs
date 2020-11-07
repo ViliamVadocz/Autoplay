@@ -1,6 +1,5 @@
 use arrayvec::ArrayVec;
-use bitmaps::Bitmap;
-use typenum::U25;
+use bitwise::{ClearBit, SetBit, TestBit};
 
 use crate::cards::{draw_cards, shift_bitmap, Card};
 use crate::error::Result;
@@ -14,10 +13,10 @@ pub struct Move {
     pub used_left_card: bool,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Player {
     pub cards: [Card; 2],
-    pub pieces: Bitmap<U25>,
+    pub pieces: u32,
     king: u8,
 }
 
@@ -69,39 +68,39 @@ impl Game {
     }
 
     pub fn take_turn(&self, my_move: &Move) -> Game {
-        let (mut my, mut other, goal) = if self.white_to_move {
-            (self.white, self.black, 2)
+        let is_white = self.white_to_move;
+
+        let (my, other, goal) = if is_white {
+            (&self.white, &self.black, 2)
         } else {
-            (self.black, self.white, 22)
+            (&self.black, &self.white, 22)
         };
 
-        // move my piece
-        my.pieces.set(my_move.from as usize, false);
-        my.pieces.set(my_move.to as usize, true);
         // move king
-        if my.king == my_move.from {
-            my.king = my_move.to;
-        }
-        // remove enemy piece if it is there
-        other.pieces.set(my_move.to as usize, false);
-
+        let king_move = my.king == my_move.from;
         // card management
-        let index = !my_move.used_left_card as usize;
-        let used_card = my.cards[index];
-        my.cards[index] = self.table_card;
-        let table_card = used_card;
+        let card_index = my_move.used_left_card as usize;
+        let table_card = my.cards[1 - card_index];
+
+        let my = Player {
+            cards: [my.cards[card_index], self.table_card],
+            pieces: my.pieces.clear_bit(my_move.from).set_bit(my_move.to),
+            king: if king_move { my_move.to } else { my.king },
+        };
+
+        let other = Player {
+            cards: other.cards,
+            pieces: other.pieces.clear_bit(my_move.to),
+            king: other.king,
+        };
 
         // switch turn
-        let white_to_move = !self.white_to_move;
+        let white_to_move = !is_white;
 
         // check for king capture or reaching end
         let in_progress = other.king != my_move.to && my.king != goal;
 
-        let (white, black) = if self.white_to_move {
-            (my, other)
-        } else {
-            (other, my)
-        };
+        let (white, black) = if is_white { (my, other) } else { (other, my) };
         Game {
             white,
             black,
@@ -129,11 +128,13 @@ impl Game {
         let mut moves = ArrayVec::new();
         // for every one of my pieces, try each card
         let mut pieces = my.pieces;
-        while let Some(from_pos) = pieces.first_index() {
-            pieces.set(from_pos, false);
+        while pieces != 0 {
+            let from_pos = pieces.trailing_zeros();
+            pieces = pieces.clear_bit(from_pos);
             let mut left_shifted = shift_bitmap(left, from_pos) & !my.pieces;
-            while let Some(to_pos) = left_shifted.first_index() {
-                left_shifted.set(to_pos, false);
+            while left_shifted != 0 {
+                let to_pos = left_shifted.trailing_zeros();
+                left_shifted = left_shifted.clear_bit(to_pos);
                 moves.push(Move {
                     from: from_pos as u8,
                     to: to_pos as u8,
@@ -141,8 +142,9 @@ impl Game {
                 });
             }
             let mut right_shifted = shift_bitmap(right, from_pos) & !my.pieces;
-            while let Some(to_pos) = right_shifted.first_index() {
-                right_shifted.set(to_pos, false);
+            while right_shifted != 0 {
+                let to_pos = right_shifted.trailing_zeros();
+                right_shifted = right_shifted.clear_bit(to_pos);
                 moves.push(Move {
                     from: from_pos as u8,
                     to: to_pos as u8,
@@ -185,10 +187,11 @@ impl Game {
 
         // for every one of my pieces, try each card
         let mut pieces = my.pieces;
-        while let Some(from_pos) = pieces.first_index() {
-            pieces.set(from_pos, false);
-            total += (shift_bitmap(left, from_pos) & !my.pieces).len();
-            total += (shift_bitmap(right, from_pos) & !my.pieces).len();
+        while pieces != 0 {
+            let from_pos = pieces.trailing_zeros();
+            pieces = pieces.clear_bit(from_pos);
+            total += (shift_bitmap(left, from_pos) & !my.pieces).count_ones() as usize;
+            total += (shift_bitmap(right, from_pos) & !my.pieces).count_ones() as usize;
         }
         // if no available moves, you can skip, but you still need to use a card
         if total != 0 {
@@ -213,13 +216,13 @@ impl fmt::Display for Game {
         // board
         let mut board = String::new();
         for i in 0..25 {
-            if self.white.pieces.get(i as usize) {
+            if self.white.pieces.test_bit(i) {
                 if i == self.white.king {
                     board.push('♔');
                 } else {
                     board.push('♙');
                 }
-            } else if self.black.pieces.get(i as usize) {
+            } else if self.black.pieces.test_bit(i) {
                 if i == self.black.king {
                     board.push('♚');
                 } else {
@@ -246,25 +249,25 @@ impl fmt::Display for Game {
 
 impl Game {
     pub fn from_state_msg(state_msg: StateMsg) -> Result<Game> {
-        let mut white = Bitmap::new();
-        let mut black = Bitmap::new();
+        let mut white = 0u32;
+        let mut black = 0u32;
         let mut white_king = 0;
         let mut black_king = 0;
         for (i, character) in (0..25).zip(state_msg.board.chars()) {
             match character {
                 '0' => {}
                 '1' => {
-                    black.set(i as usize, true);
+                    black = black.set_bit(i);
                 }
                 '2' => {
-                    black.set(i as usize, true);
+                    black = black.set_bit(i);
                     black_king = i;
                 }
                 '3' => {
-                    white.set(i as usize, true);
+                    white = white.set_bit(i);
                 }
                 '4' => {
-                    white.set(i as usize, true);
+                    white = white.set_bit(i);
                     white_king = i;
                 }
                 _ => {}

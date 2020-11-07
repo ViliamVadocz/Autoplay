@@ -1,11 +1,10 @@
 use crate::error::{Result, UnexpectedVariant};
 use array_const_fn_init::array_const_fn_init;
-use bitmaps::Bitmap;
+use bitwise::TestBit;
 use rand::{
     distributions::{Distribution, Standard},
     Rng,
 };
-use typenum::U25;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Card {
@@ -57,12 +56,12 @@ const BLACK_CARDS: [u32; 16] = array_const_fn_init![const_card; 16];
 const WHITE_CARDS: [u32; 16] = array_const_fn_init![const_reversed_card; 16];
 
 impl Card {
-    pub fn get_white(self) -> Bitmap<U25> {
-        Bitmap::from_value(WHITE_CARDS[self as usize])
+    pub fn get_white(self) -> u32 {
+        WHITE_CARDS[self as usize]
     }
 
-    pub fn get_black(self) -> Bitmap<U25> {
-        Bitmap::from_value(BLACK_CARDS[self as usize])
+    pub fn get_black(self) -> u32 {
+        BLACK_CARDS[self as usize]
     }
 
     pub fn is_white(self) -> bool {
@@ -181,20 +180,19 @@ const fn shift_mask(pos: usize) -> u32 {
 
 const SHIFT_MASK: [u32; 25] = array_const_fn_init![shift_mask; 25];
 
-pub fn shift_bitmap(board: Bitmap<U25>, pos: usize) -> Bitmap<U25> {
-    let value = board.into_value();
+pub fn shift_bitmap(board: u32, pos: u32) -> u32 {
     let shifted = if pos > 12 {
-        value.overflowing_shl(pos as u32 - 12).0
+        board.overflowing_shl(pos - 12).0
     } else {
-        value.overflowing_shr(12 - pos as u32).0
+        board.overflowing_shr(12 - pos).0
     };
-    Bitmap::from_value(shifted & SHIFT_MASK[pos])
+    shifted & SHIFT_MASK[pos as usize]
 }
 
-pub fn print_bitmap(bitmap: &Bitmap<U25>) {
+pub fn print_bitmap(bitmap: u32) {
     let mut repr = String::new();
-    for index in 0..25 {
-        if bitmap.get(index) {
+    for index in 0..25u32 {
+        if bitmap.test_bit(index) {
             repr.push('1');
         } else {
             repr.push('0');
@@ -215,10 +213,7 @@ mod tests {
 
     #[test]
     fn test_reverse_bitmap() {
-        assert_eq!(
-            Card::Eel.get_white().into_value(),
-            Card::Cobra.get_black().into_value()
-        )
+        assert_eq!(Card::Eel.get_white(), Card::Cobra.get_black())
     }
 
     #[test]

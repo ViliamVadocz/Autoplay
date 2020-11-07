@@ -8,7 +8,7 @@ edition = "2018"
 debug = true
 
 [dependencies]
-bitmaps = "2.1.0"
+bitwise = { git = "https://github.com/gnzlbg/bitwise" }
 typenum = "1.12.0"
 rand = "0.7.3"
 serde = "1.0"

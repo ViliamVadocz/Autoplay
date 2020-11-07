@@ -1,6 +1,6 @@
 #![feature(test)]
 extern crate arrayvec;
-extern crate bitmaps;
+extern crate bitwise;
 extern crate rand;
 extern crate test;
 extern crate typenum;
