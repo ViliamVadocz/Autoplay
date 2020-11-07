@@ -161,9 +161,9 @@ mod tests {
         let game = test::black_box(Game::from_cards(Vec::from(CARDS)));
         b.iter(|| perft(&game, 6));
     }
-    // #[bench]
-    // fn bench_perft_7(b: &mut Bencher) {
-    //     let game = test::black_box(Game::from_cards(Vec::from(CARDS)));
-    //     b.iter(|| perft(&game, 7));
-    // }
+    #[bench]
+    fn bench_perft_7(b: &mut Bencher) {
+        let game = test::black_box(Game::from_cards(Vec::from(CARDS)));
+        b.iter(|| perft(&game, 7));
+    }
 }

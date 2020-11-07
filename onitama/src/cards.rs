@@ -26,25 +26,107 @@ pub enum Card {
     Tiger,
 }
 
-// these are for black
+// these are for white
+#[rustfmt::skip]
 const fn const_card(num: usize) -> u32 {
     match Card::from_num(num) {
-        Card::Tiger => 0b00100_00000_00000_00100_00000,
-        Card::Crab => 0b00000_00100_10001_00000_00000,
-        Card::Monkey => 0b00000_01010_00000_01010_00000,
-        Card::Crane => 0b00000_00100_00000_01010_00000,
-        Card::Dragon => 0b00000_10001_00000_01010_00000,
-        Card::Elephant => 0b00000_01010_01010_00000_00000,
-        Card::Mantis => 0b00000_01010_00000_00100_00000,
-        Card::Boar => 0b00000_00100_01010_00000_00000,
-        Card::Frog => 0b00000_01000_10000_00010_00000,
-        Card::Rabbit => 0b00000_00010_00001_01000_00000,
-        Card::Goose => 0b00000_01000_01010_00010_00000,
-        Card::Rooster => 0b00000_00010_01010_01000_00000,
-        Card::Horse => 0b00000_00100_01000_00100_00000,
-        Card::Ox => 0b00000_00100_00010_00100_00000,
-        Card::Eel => 0b00000_01000_00010_01000_00000,
-        Card::Cobra => 0b00000_00010_01000_00010_00000,
+        Card::Boar =>
+            board!(0 0 0 0 0
+                   0 0 1 0 0
+                   0 1 0 1 0
+                   0 0 0 0 0
+                   0 0 0 0 0),
+        Card::Cobra =>
+            board!(0 0 0 0 0
+                   0 0 0 1 0
+                   0 1 0 0 0
+                   0 0 0 1 0
+                   0 0 0 0 0),
+        Card::Crab =>
+            board!(0 0 0 0 0
+                   0 0 1 0 0
+                   1 0 0 0 1
+                   0 0 0 0 0
+                   0 0 0 0 0),
+        Card::Crane =>
+            board!(0 0 0 0 0
+                   0 0 1 0 0
+                   0 0 0 0 0
+                   0 1 0 1 0
+                   0 0 0 0 0),
+        Card::Dragon =>
+            board!(0 0 0 0 0
+                   1 0 0 0 1
+                   0 0 0 0 0
+                   0 1 0 1 0
+                   0 0 0 0 0),
+        Card::Eel =>
+            board!(0 0 0 0 0
+                   0 1 0 0 0
+                   0 0 0 1 0
+                   0 1 0 0 0
+                   0 0 0 0 0),
+        Card::Elephant =>
+            board!(0 0 0 0 0
+                   0 1 0 1 0
+                   0 1 0 1 0
+                   0 0 0 0 0
+                   0 0 0 0 0),
+        Card::Frog =>
+            board!(0 0 0 0 0
+                   0 1 0 0 0
+                   1 0 0 0 0
+                   0 0 0 1 0
+                   0 0 0 0 0),
+        Card::Goose =>
+            board!(0 0 0 0 0
+                   0 1 0 0 0
+                   0 1 0 1 0
+                   0 0 0 1 0
+                   0 0 0 0 0),
+        Card::Horse =>
+            board!(0 0 0 0 0
+                   0 0 1 0 0
+                   0 1 0 0 0
+                   0 0 1 0 0
+                   0 0 0 0 0),
+        Card::Mantis =>
+            board!(0 0 0 0 0
+                   0 1 0 1 0
+                   0 0 0 0 0
+                   0 0 1 0 0
+                   0 0 0 0 0),
+        Card::Monkey =>
+            board!(0 0 0 0 0
+                   0 1 0 1 0
+                   0 0 0 0 0
+                   0 1 0 1 0
+                   0 0 0 0 0),
+        Card::Ox =>
+            board!(0 0 0 0 0
+                   0 0 1 0 0
+                   0 0 0 1 0
+                   0 0 1 0 0
+                   0 0 0 0 0),
+        Card::Rabbit =>
+            board!(0 0 0 0 0
+                   0 0 0 1 0
+                   0 0 0 0 1
+                   0 1 0 0 0
+                   0 0 0 0 0),
+        Card::Rooster =>
+            board!(0 0 0 0 0
+                   0 0 0 1 0
+                   0 1 0 1 0
+                   0 1 0 0 0
+                   0 0 0 0 0),
+        Card::Tiger =>
+            board!(0 0 1 0 0
+                   0 0 0 0 0
+                   0 0 0 0 0
+                   0 0 1 0 0
+                   0 0 0 0 0),
+            
     }
 }
 
@@ -52,8 +134,8 @@ const fn const_reversed_card(card: usize) -> u32 {
     const_card(card).reverse_bits() >> 32 - 25
 }
 
-const BLACK_CARDS: [u32; 16] = array_const_fn_init![const_card; 16];
-const WHITE_CARDS: [u32; 16] = array_const_fn_init![const_reversed_card; 16];
+const WHITE_CARDS: [u32; 16] = array_const_fn_init![const_card; 16];
+const BLACK_CARDS: [u32; 16] = array_const_fn_init![const_reversed_card; 16];
 
 impl Card {
     pub fn get_white(self) -> u32 {

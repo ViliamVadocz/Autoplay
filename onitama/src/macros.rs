@@ -9,13 +9,12 @@ macro_rules! board {
     };
     // match 1
     (@$counter:expr, $temp_bitmap:ident, 1 $($other:tt)*) => {
-        $temp_bitmap = $temp_bitmap.set_bit($counter); // set this position to true
+        $temp_bitmap = $temp_bitmap | 1 << $counter; // set this position to true
         board!(@$counter + 1, $temp_bitmap, $($other)*);
     };
     // get 1s and 0s
     ($($lit:tt)*) => {
         {
-            use bitwise::SetBit;
             let mut temp_bitmap = 0u32;
             board!(@0u32, temp_bitmap, $($lit)*);
             temp_bitmap
