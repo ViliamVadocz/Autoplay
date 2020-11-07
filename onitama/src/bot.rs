@@ -1,6 +1,6 @@
-use crate::cards::{reverse_bitmap, shift_bitmap};
+use crate::cards::shift_bitmap;
 use crate::game::{Game, Move};
-use bitmaps::Bitmap;
+use bitwise::ClearBit;
 
 const PIECE_WEIGHT: i64 = 10;
 const SQUARE_WEIGHT: i64 = 1;
@@ -16,22 +16,24 @@ pub fn game_eval(g: Game) -> i64 {
         }
     } else {
         // calculate controlled squares
-        let mut white_control = Bitmap::new();
+        let mut white_control = 0u32;
         let mut pieces = g.white.pieces;
-        while let Some(pos) = pieces.first_index() {
-            pieces.set(pos, false);
-            white_control |= shift_bitmap(g.white.cards[0].get_moves(), pos);
-            white_control |= shift_bitmap(g.white.cards[1].get_moves(), pos);
+        while pieces != 0 {
+            let pos = pieces.trailing_zeros();
+            pieces = pieces.clear_bit(pos);
+            white_control |= shift_bitmap(g.white.cards[0].get_white(), pos);
+            white_control |= shift_bitmap(g.white.cards[1].get_white(), pos);
         }
-        let mut black_control = Bitmap::new();
+        let mut black_control = 0u32;
         let mut pieces = g.black.pieces;
-        while let Some(pos) = pieces.first_index() {
-            pieces.set(pos, false);
-            black_control |= shift_bitmap(reverse_bitmap(g.black.cards[0].get_moves()), pos);
-            black_control |= shift_bitmap(reverse_bitmap(g.black.cards[1].get_moves()), pos);
+        while pieces != 0 {
+            let pos = pieces.trailing_zeros();
+            pieces = pieces.clear_bit(pos);
+            black_control |= shift_bitmap(g.black.cards[0].get_black(), pos);
+            black_control |= shift_bitmap(g.black.cards[1].get_black(), pos);
         }
-        let square_diff = white_control.len() as i64 - black_control.len() as i64;
-        let piece_diff = g.white.pieces.len() as i64 - g.black.pieces.len() as i64;
+        let square_diff = white_control.count_ones() as i64 - black_control.count_ones() as i64;
+        let piece_diff = g.white.pieces.count_ones() as i64 - g.black.pieces.count_ones() as i64;
         PIECE_WEIGHT * piece_diff + SQUARE_WEIGHT * square_diff
     }
 }

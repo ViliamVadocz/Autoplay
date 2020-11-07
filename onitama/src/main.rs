@@ -1,7 +1,7 @@
 #![feature(test)]
-extern crate bitmaps;
+extern crate arrayvec;
+extern crate bitwise;
 extern crate rand;
-extern crate smallvec;
 extern crate test;
 extern crate typenum;
 extern crate websocket;

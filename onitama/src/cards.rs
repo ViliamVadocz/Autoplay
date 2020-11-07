@@ -1,10 +1,10 @@
 use crate::error::{Result, UnexpectedVariant};
-use bitmaps::Bitmap;
+use array_const_fn_init::array_const_fn_init;
+use bitwise::TestBit;
 use rand::{
     distributions::{Distribution, Standard},
     Rng,
 };
-use typenum::U25;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Card {
@@ -26,209 +26,124 @@ pub enum Card {
     Tiger,
 }
 
+// these are for white
+#[rustfmt::skip]
+const fn const_card(num: usize) -> u32 {
+    match Card::from_num(num) {
+        Card::Boar =>
+            board!(0 0 0 0 0
+                   0 0 1 0 0
+                   0 1 0 1 0
+                   0 0 0 0 0
+                   0 0 0 0 0),
+        Card::Cobra =>
+            board!(0 0 0 0 0
+                   0 0 0 1 0
+                   0 1 0 0 0
+                   0 0 0 1 0
+                   0 0 0 0 0),
+        Card::Crab =>
+            board!(0 0 0 0 0
+                   0 0 1 0 0
+                   1 0 0 0 1
+                   0 0 0 0 0
+                   0 0 0 0 0),
+        Card::Crane =>
+            board!(0 0 0 0 0
+                   0 0 1 0 0
+                   0 0 0 0 0
+                   0 1 0 1 0
+                   0 0 0 0 0),
+        Card::Dragon =>
+            board!(0 0 0 0 0
+                   1 0 0 0 1
+                   0 0 0 0 0
+                   0 1 0 1 0
+                   0 0 0 0 0),
+        Card::Eel =>
+            board!(0 0 0 0 0
+                   0 1 0 0 0
+                   0 0 0 1 0
+                   0 1 0 0 0
+                   0 0 0 0 0),
+        Card::Elephant =>
+            board!(0 0 0 0 0
+                   0 1 0 1 0
+                   0 1 0 1 0
+                   0 0 0 0 0
+                   0 0 0 0 0),
+        Card::Frog =>
+            board!(0 0 0 0 0
+                   0 1 0 0 0
+                   1 0 0 0 0
+                   0 0 0 1 0
+                   0 0 0 0 0),
+        Card::Goose =>
+            board!(0 0 0 0 0
+                   0 1 0 0 0
+                   0 1 0 1 0
+                   0 0 0 1 0
+                   0 0 0 0 0),
+        Card::Horse =>
+            board!(0 0 0 0 0
+                   0 0 1 0 0
+                   0 1 0 0 0
+                   0 0 1 0 0
+                   0 0 0 0 0),
+        Card::Mantis =>
+            board!(0 0 0 0 0
+                   0 1 0 1 0
+                   0 0 0 0 0
+                   0 0 1 0 0
+                   0 0 0 0 0),
+        Card::Monkey =>
+            board!(0 0 0 0 0
+                   0 1 0 1 0
+                   0 0 0 0 0
+                   0 1 0 1 0
+                   0 0 0 0 0),
+        Card::Ox =>
+            board!(0 0 0 0 0
+                   0 0 1 0 0
+                   0 0 0 1 0
+                   0 0 1 0 0
+                   0 0 0 0 0),
+        Card::Rabbit =>
+            board!(0 0 0 0 0
+                   0 0 0 1 0
+                   0 0 0 0 1
+                   0 1 0 0 0
+                   0 0 0 0 0),
+        Card::Rooster =>
+            board!(0 0 0 0 0
+                   0 0 0 1 0
+                   0 1 0 1 0
+                   0 1 0 0 0
+                   0 0 0 0 0),
+        Card::Tiger =>
+            board!(0 0 1 0 0
+                   0 0 0 0 0
+                   0 0 0 0 0
+                   0 0 1 0 0
+                   0 0 0 0 0),
+            
+    }
+}
+
+const fn const_reversed_card(card: usize) -> u32 {
+    const_card(card).reverse_bits() >> 32 - 25
+}
+
+const WHITE_CARDS: [u32; 16] = array_const_fn_init![const_card; 16];
+const BLACK_CARDS: [u32; 16] = array_const_fn_init![const_reversed_card; 16];
+
 impl Card {
-    #[rustfmt::skip]
-    pub fn get_moves(self) -> Bitmap<U25> {
-        match self {
-            Card::Boar =>
-                board!(0 0 0 0 0
-                       0 0 1 0 0
-                       0 1 0 1 0
-                       0 0 0 0 0
-                       0 0 0 0 0),
-            Card::Cobra =>
-                board!(0 0 0 0 0
-                       0 0 0 1 0
-                       0 1 0 0 0
-                       0 0 0 1 0
-                       0 0 0 0 0),
-            Card::Crab =>
-                board!(0 0 0 0 0
-                       0 0 1 0 0
-                       1 0 0 0 1
-                       0 0 0 0 0
-                       0 0 0 0 0),
-            Card::Crane =>
-                board!(0 0 0 0 0
-                       0 0 1 0 0
-                       0 0 0 0 0
-                       0 1 0 1 0
-                       0 0 0 0 0),
-            Card::Dragon =>
-                board!(0 0 0 0 0
-                       1 0 0 0 1
-                       0 0 0 0 0
-                       0 1 0 1 0
-                       0 0 0 0 0),
-            Card::Eel =>
-                board!(0 0 0 0 0
-                       0 1 0 0 0
-                       0 0 0 1 0
-                       0 1 0 0 0
-                       0 0 0 0 0),
-            Card::Elephant =>
-                board!(0 0 0 0 0
-                       0 1 0 1 0
-                       0 1 0 1 0
-                       0 0 0 0 0
-                       0 0 0 0 0),
-            Card::Frog =>
-                board!(0 0 0 0 0
-                       0 1 0 0 0
-                       1 0 0 0 0
-                       0 0 0 1 0
-                       0 0 0 0 0),
-            Card::Goose =>
-                board!(0 0 0 0 0
-                       0 1 0 0 0
-                       0 1 0 1 0
-                       0 0 0 1 0
-                       0 0 0 0 0),
-            Card::Horse =>
-                board!(0 0 0 0 0
-                       0 0 1 0 0
-                       0 1 0 0 0
-                       0 0 1 0 0
-                       0 0 0 0 0),
-            Card::Mantis =>
-                board!(0 0 0 0 0
-                       0 1 0 1 0
-                       0 0 0 0 0
-                       0 0 1 0 0
-                       0 0 0 0 0),
-            Card::Monkey =>
-                board!(0 0 0 0 0
-                       0 1 0 1 0
-                       0 0 0 0 0
-                       0 1 0 1 0
-                       0 0 0 0 0),
-            Card::Ox =>
-                board!(0 0 0 0 0
-                       0 0 1 0 0
-                       0 0 0 1 0
-                       0 0 1 0 0
-                       0 0 0 0 0),
-            Card::Rabbit =>
-                board!(0 0 0 0 0
-                       0 0 0 1 0
-                       0 0 0 0 1
-                       0 1 0 0 0
-                       0 0 0 0 0),
-            Card::Rooster =>
-                board!(0 0 0 0 0
-                       0 0 0 1 0
-                       0 1 0 1 0
-                       0 1 0 0 0
-                       0 0 0 0 0),
-            Card::Tiger =>
-                board!(0 0 1 0 0
-                       0 0 0 0 0
-                       0 0 0 0 0
-                       0 0 1 0 0
-                       0 0 0 0 0),
-        }
+    pub fn get_white(self) -> u32 {
+        WHITE_CARDS[self as usize]
     }
 
-    #[rustfmt::skip]
-    pub fn get_reverse_moves(self) -> Bitmap<U25> {
-        match self {
-            Card::Boar =>
-                board!(0 0 0 0 0
-                       0 0 0 0 0
-                       0 1 0 1 0
-                       0 0 1 0 0
-                       0 0 0 0 0),
-            Card::Cobra =>
-                board!(0 0 0 0 0
-                       0 1 0 0 0
-                       0 0 0 1 0
-                       0 1 0 0 0
-                       0 0 0 0 0),
-            Card::Crab =>
-                board!(0 0 0 0 0
-                       0 0 0 0 0
-                       1 0 0 0 1
-                       0 0 1 0 0
-                       0 0 0 0 0),
-            Card::Crane =>
-                board!(0 0 0 0 0
-                       0 1 0 1 0
-                       0 0 0 0 0
-                       0 0 1 0 0
-                       0 0 0 0 0),
-            Card::Dragon =>
-                board!(0 0 0 0 0
-                       0 1 0 1 0
-                       0 0 0 0 0
-                       1 0 0 0 1
-                       0 0 0 0 0),
-            Card::Eel =>
-                board!(0 0 0 0 0
-                       0 0 0 1 0
-                       0 1 0 0 0
-                       0 0 0 1 0
-                       0 0 0 0 0),
-            Card::Elephant =>
-                board!(0 0 0 0 0
-                       0 0 0 0 0
-                       0 1 0 1 0
-                       0 1 0 1 0
-                       0 0 0 0 0),
-            Card::Frog =>
-                board!(0 0 0 0 0
-                       0 1 0 0 0
-                       0 0 0 0 1
-                       0 0 0 1 0
-                       0 0 0 0 0),
-            Card::Goose =>
-                board!(0 0 0 0 0
-                       0 1 0 0 0
-                       0 1 0 1 0
-                       0 0 0 1 0
-                       0 0 0 0 0),
-            Card::Horse =>
-                board!(0 0 0 0 0
-                       0 0 1 0 0
-                       0 0 0 1 0
-                       0 0 1 0 0
-                       0 0 0 0 0),
-            Card::Mantis =>
-                board!(0 0 0 0 0
-                       0 0 1 0 0
-                       0 0 0 0 0
-                       0 1 0 1 0
-                       0 0 0 0 0),
-            Card::Monkey =>
-                board!(0 0 0 0 0
-                       0 1 0 1 0
-                       0 0 0 0 0
-                       0 1 0 1 0
-                       0 0 0 0 0),
-            Card::Ox =>
-                board!(0 0 0 0 0
-                       0 0 1 0 0
-                       0 1 0 0 0
-                       0 0 1 0 0
-                       0 0 0 0 0),
-            Card::Rabbit =>
-                board!(0 0 0 0 0
-                       0 0 0 1 0
-                       0 0 0 0 1
-                       0 1 0 0 0
-                       0 0 0 0 0),
-            Card::Rooster =>
-                board!(0 0 0 0 0
-                       0 0 0 1 0
-                       0 1 0 1 0
-                       0 1 0 0 0
-                       0 0 0 0 0),
-            Card::Tiger =>
-                board!(0 0 0 0 0
-                       0 0 1 0 0
-                       0 0 0 0 0
-                       0 0 0 0 0
-                       0 0 1 0 0),
-        }
+    pub fn get_black(self) -> u32 {
+        BLACK_CARDS[self as usize]
     }
 
     pub fn is_white(self) -> bool {
@@ -294,28 +209,33 @@ impl Card {
             _ => Err(Box::new(UnexpectedVariant::new(text.to_string()))),
         }
     }
+
+    pub const fn from_num(num: usize) -> Self {
+        match num {
+            x if x == Card::Boar as usize => Card::Boar,
+            x if x == Card::Cobra as usize => Card::Cobra,
+            x if x == Card::Crab as usize => Card::Crab,
+            x if x == Card::Crane as usize => Card::Crane,
+            x if x == Card::Dragon as usize => Card::Dragon,
+            x if x == Card::Eel as usize => Card::Eel,
+            x if x == Card::Elephant as usize => Card::Elephant,
+            x if x == Card::Frog as usize => Card::Frog,
+            x if x == Card::Goose as usize => Card::Goose,
+            x if x == Card::Horse as usize => Card::Horse,
+            x if x == Card::Mantis as usize => Card::Mantis,
+            x if x == Card::Monkey as usize => Card::Monkey,
+            x if x == Card::Ox as usize => Card::Ox,
+            x if x == Card::Rabbit as usize => Card::Rabbit,
+            x if x == Card::Rooster as usize => Card::Rooster,
+            x if x == Card::Tiger as usize => Card::Tiger,
+            _ => Card::Boar,
+        }
+    }
 }
 
 impl Distribution<Card> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Card {
-        match rng.gen_range(0, 16) {
-            0 => Card::Boar,
-            1 => Card::Cobra,
-            2 => Card::Crab,
-            3 => Card::Crane,
-            4 => Card::Dragon,
-            5 => Card::Eel,
-            6 => Card::Elephant,
-            7 => Card::Frog,
-            8 => Card::Goose,
-            9 => Card::Horse,
-            10 => Card::Mantis,
-            11 => Card::Monkey,
-            12 => Card::Ox,
-            13 => Card::Rabbit,
-            14 => Card::Rooster,
-            _ => Card::Tiger,
-        }
+        Card::from_num(rng.gen_range(0, 16))
     }
 }
 
@@ -330,34 +250,31 @@ pub fn draw_cards() -> Vec<Card> {
     drawn
 }
 
-pub fn reverse_bitmap(board: Bitmap<U25>) -> Bitmap<U25> {
-    let value = board.into_value();
-    let reversed = value.reverse_bits() >> 32 - 25;
-    Bitmap::from_value(reversed)
+const fn shift_mask(pos: usize) -> u32 {
+    [
+        0b00111_00111_00111_00111_00111,
+        0b01111_01111_01111_01111_01111,
+        0b11111_11111_11111_11111_11111,
+        0b11110_11110_11110_11110_11110,
+        0b11100_11100_11100_11100_11100,
+    ][pos % 5]
 }
 
-const SHIFT_MASK: [u32; 5] = [
-    0b00111_00111_00111_00111_00111,
-    0b01111_01111_01111_01111_01111,
-    0b11111_11111_11111_11111_11111,
-    0b11110_11110_11110_11110_11110,
-    0b11100_11100_11100_11100_11100,
-];
+const SHIFT_MASK: [u32; 25] = array_const_fn_init![shift_mask; 25];
 
-pub fn shift_bitmap(board: Bitmap<U25>, pos: usize) -> Bitmap<U25> {
-    let value = board.into_value();
+pub fn shift_bitmap(board: u32, pos: u32) -> u32 {
     let shifted = if pos > 12 {
-        value.overflowing_shl(pos as u32 - 12).0
+        board.overflowing_shl(pos - 12).0
     } else {
-        value.overflowing_shr(12 - pos as u32).0
+        board.overflowing_shr(12 - pos).0
     };
-    Bitmap::from_value(shifted & SHIFT_MASK[pos % 5])
+    shifted & SHIFT_MASK[pos as usize]
 }
 
-pub fn print_bitmap(bitmap: &Bitmap<U25>) {
+pub fn print_bitmap(bitmap: u32) {
     let mut repr = String::new();
-    for index in 0..25 {
-        if bitmap.get(index) {
+    for index in 0..25u32 {
+        if bitmap.test_bit(index) {
             repr.push('1');
         } else {
             repr.push('0');
@@ -378,18 +295,7 @@ mod tests {
 
     #[test]
     fn test_reverse_bitmap() {
-        assert_eq!(
-            reverse_bitmap(Card::Eel.get_moves()),
-            Card::Cobra.get_moves()
-        )
-    }
-
-    #[bench]
-    fn bench_reverse_bitmap(b: &mut Bencher) {
-        b.iter(|| {
-            let card = test::black_box(Card::Eel.get_moves());
-            reverse_bitmap(card)
-        });
+        assert_eq!(Card::Eel.get_white(), Card::Cobra.get_black())
     }
 
     #[test]
@@ -441,7 +347,7 @@ mod tests {
     #[bench]
     fn bench_shift_bitmap(b: &mut Bencher) {
         b.iter(|| {
-            let card = test::black_box(Card::Eel.get_moves());
+            let card = test::black_box(Card::Eel.get_white());
             shift_bitmap(card, 6)
         });
     }
