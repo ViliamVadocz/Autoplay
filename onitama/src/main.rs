@@ -16,6 +16,7 @@ mod connection;
 mod error;
 mod game;
 mod messages;
+mod perft;
 
 use crate::error::Result;
 

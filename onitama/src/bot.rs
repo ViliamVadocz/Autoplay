@@ -62,108 +62,28 @@ pub fn eval_move(g: &Game, the_move: &Move, depth: u8) -> i64 {
     }
 }
 
+const SEARCH_DEPTH: u8 = 5;
 pub fn get_move(g: &Game) -> Move {
-    let (white_best, black_best) = (i64::MIN, i64::MAX);
-    let mut white_best_move = None;
-    let mut black_best_move = None;
-    for m in g.gen_moves().into_iter() {
-        let eval = eval_move(g, &m, 5);
-        if eval >= white_best {
-            white_best_move = Some(m)
-        } else if eval <= black_best {
-            black_best_move = Some(m)
-        }
-    }
-
+    let mut best_move = None;
     if g.white_to_move {
-        white_best_move.unwrap()
+        let mut best = i64::MIN;
+        for m in g.gen_moves().into_iter() {
+            let eval = eval_move(g, &m, SEARCH_DEPTH);
+            if eval >= best {
+                best_move = Some(m);
+                best = eval;
+            }
+        }
+        best_move.unwrap()
     } else {
-        black_best_move.unwrap()
-    }
-}
-
-pub fn perft(g: &Game, depth: u8) -> usize {
-    if !g.in_progress || depth == 0 {
-        1
-    } else {
-        let moves = g.gen_moves();
-        moves
-            .iter()
-            .map(|m| {
-                let new_g = g.take_turn(m);
-                perft(&new_g, depth - 1)
-            })
-            .sum()
-    }
-}
-
-pub fn perft_cheat(g: &Game, depth: u8) -> usize {
-    if !g.in_progress {
-        1
-    } else if depth == 1 {
-        g.count_moves()
-    } else {
-        let moves = g.gen_moves();
-        moves
-            .iter()
-            .map(|m| {
-                let new_g = g.take_turn(m);
-                perft_cheat(&new_g, depth - 1)
-            })
-            .sum()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::cards::Card;
-    use test::Bencher;
-
-    const CARDS: [Card; 5] = [
-        Card::Ox,
-        Card::Boar,
-        Card::Horse,
-        Card::Elephant,
-        Card::Crab,
-    ];
-
-    #[test]
-    fn test_pertf() {
-        let game = Game::from_cards(Vec::from(CARDS));
-        assert_eq!(perft_cheat(&game, 1), 10);
-        assert_eq!(perft_cheat(&game, 2), 130);
-        assert_eq!(perft_cheat(&game, 3), 1989);
-        assert_eq!(perft_cheat(&game, 4), 28509);
-        assert_eq!(perft_cheat(&game, 5), 487780);
-        assert_eq!(perft_cheat(&game, 6), 7748422);
-        assert_eq!(perft_cheat(&game, 7), 137281607);
-        assert_eq!(perft_cheat(&game, 8), 2353802670);
-    }
-
-    #[bench]
-    fn bench_perft_3(b: &mut Bencher) {
-        let game = test::black_box(Game::from_cards(Vec::from(CARDS)));
-        b.iter(|| perft(&game, 3));
-    }
-    #[bench]
-    fn bench_perft_4(b: &mut Bencher) {
-        let game = test::black_box(Game::from_cards(Vec::from(CARDS)));
-        b.iter(|| perft(&game, 4));
-    }
-    #[bench]
-    fn bench_perft_5(b: &mut Bencher) {
-        let game = test::black_box(Game::from_cards(Vec::from(CARDS)));
-        b.iter(|| perft(&game, 5));
-    }
-    #[bench]
-    fn bench_perft_6(b: &mut Bencher) {
-        let game = test::black_box(Game::from_cards(Vec::from(CARDS)));
-        b.iter(|| perft(&game, 6));
-    }
-    #[bench]
-    fn bench_perft_7(b: &mut Bencher) {
-        let game = test::black_box(Game::from_cards(Vec::from(CARDS)));
-        b.iter(|| perft(&game, 7));
+        let mut best = i64::MAX;
+        for m in g.gen_moves().into_iter() {
+            let eval = eval_move(g, &m, SEARCH_DEPTH);
+            if eval <= best {
+                best_move = Some(m);
+                best = eval;
+            }
+        }
+        best_move.unwrap()
     }
 }
