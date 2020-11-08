@@ -9,7 +9,7 @@ macro_rules! board {
     };
     // match 1
     (@$counter:expr, $temp_bitmap:ident, 1 $($other:tt)*) => {
-        $temp_bitmap = $temp_bitmap | 1 << $counter; // set this position to true
+        $temp_bitmap |= 1 << $counter; // set this position to true
         board!(@$counter + 1, $temp_bitmap, $($other)*);
     };
     // get 1s and 0s

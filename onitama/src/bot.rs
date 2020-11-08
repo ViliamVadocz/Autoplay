@@ -67,7 +67,7 @@ pub fn get_move(g: &Game) -> Move {
     let mut white_best_move = None;
     let mut black_best_move = None;
     for m in g.gen_moves().into_iter() {
-        let eval = eval_move(g, &m, 7);
+        let eval = eval_move(g, &m, 5);
         if eval >= white_best {
             white_best_move = Some(m)
         } else if eval <= black_best {

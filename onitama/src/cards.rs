@@ -132,7 +132,7 @@ const fn const_card(num: usize) -> u32 {
 }
 
 const fn const_reversed_card(card: usize) -> u32 {
-    const_card(card).reverse_bits() >> 32 - 25
+    const_card(card).reverse_bits() >> (32 - 25)
 }
 
 const WHITE_CARDS: [u32; 16] = array_const_fn_init![const_card; 16];

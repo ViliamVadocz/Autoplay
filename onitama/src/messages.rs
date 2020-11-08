@@ -107,8 +107,12 @@ pub fn translate_pos_back(pos: &str) -> Result<usize> {
     let mut chars = pos.chars();
     let first = chars.next().ok_or("pos too short")?;
     let second = chars.next().ok_or("pos too short")?;
-    let row = "abcde".find(first).ok_or(format!("{} is an invalid row", first))?;
-    let col = "12345".find(second).ok_or(format!("{} is an invalid col", second))?;
+    let row = "abcde"
+        .find(first)
+        .ok_or(format!("{} is an invalid row", first))?;
+    let col = "12345"
+        .find(second)
+        .ok_or(format!("{} is an invalid col", second))?;
     Ok(row * 5 + col)
 }
 

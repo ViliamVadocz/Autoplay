@@ -2,6 +2,7 @@ use crate::messages::LitamaMessage;
 use std::error::Error;
 use std::fmt;
 
+// TODO Put some effort into error management instead of boxing everything
 pub type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 #[derive(Debug)]

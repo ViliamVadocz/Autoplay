@@ -6,7 +6,7 @@ use crate::error::Result;
 use crate::messages::*;
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Move {
     pub from: u8,
     pub to: u8,
@@ -24,7 +24,7 @@ pub struct Player {
 pub struct Game {
     pub white: Player,
     pub black: Player,
-    table_card: Card,
+    pub table_card: Card,
     pub white_to_move: bool,
     pub in_progress: bool,
 }
