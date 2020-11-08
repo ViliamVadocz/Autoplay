@@ -81,6 +81,8 @@ impl Game {
         // card management
         let card_index = my_move.used_left_card as usize;
         let table_card = my.cards[1 - card_index];
+        // king capture
+        let king_capture = my_move.to == other.king;
 
         let my = Player {
             cards: [my.cards[card_index], self.table_card],
@@ -91,14 +93,14 @@ impl Game {
         let other = Player {
             cards: other.cards,
             pieces: other.pieces.clear_bit(my_move.to),
-            king: other.king,
+            king: if king_capture { 25 } else { other.king }, // move out of board, doesn't get displayed
         };
 
         // switch turn
         let white_to_move = !is_white;
 
         // check for king capture or reaching end
-        let in_progress = other.king != my_move.to && my.king != goal;
+        let in_progress = !king_capture && my.king != goal;
 
         let (white, black) = if is_white { (my, other) } else { (other, my) };
         Game {
@@ -207,10 +209,18 @@ impl fmt::Display for Game {
         let mut output = String::new();
 
         // colour to move
-        if self.white_to_move {
-            output.push_str("White to move\n")
+        if self.in_progress {
+            if self.white_to_move {
+                output.push_str("White to move\n")
+            } else {
+                output.push_str("Black to move\n")
+            }
         } else {
-            output.push_str("Black to move\n")
+            if self.white_to_move {
+                output.push_str("Black won\n");
+            } else {
+                output.push_str("White won\n")
+            }
         }
 
         // board
