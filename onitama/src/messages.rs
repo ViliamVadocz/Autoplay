@@ -103,6 +103,15 @@ pub fn translate_pos(pos: usize) -> String {
     .collect::<String>()
 }
 
+pub fn translate_pos_back(pos: &str) -> Result<usize> {
+    let mut chars = pos.chars();
+    let first = chars.next().ok_or("pos too short")?;
+    let second = chars.next().ok_or("pos too short")?;
+    let row = "abcde".find(first).ok_or(format!("{} is an invalid row", first))?;
+    let col = "12345".find(second).ok_or(format!("{} is an invalid col", second))?;
+    Ok(row * 5 + col)
+}
+
 pub fn move_to_command(my_move: &Move, match_id: &str, token: &str, game: &Game) -> String {
     let mut command = String::from("move ");
     // match id
@@ -127,6 +136,5 @@ pub fn move_to_command(my_move: &Move, match_id: &str, token: &str, game: &Game)
         &my_cards[1]
     };
     command.push_str(card.get_name());
-    println!("> {}", command);
     command
 }
