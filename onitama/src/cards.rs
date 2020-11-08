@@ -5,6 +5,7 @@ use rand::{
     distributions::{Distribution, Standard},
     Rng,
 };
+use std::fmt;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Card {
@@ -233,6 +234,27 @@ impl Card {
     }
 }
 
+impl fmt::Display for Card {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut repr = String::from(self.get_name());
+        repr.push('\n');
+        let bitmap = self.get_white();
+        for index in 0..25u32 {
+            if bitmap.test_bit(index) {
+                repr.push('◼');
+            } else {
+                repr.push('◻');
+            }
+            if index % 5 == 4 {
+                repr.push('\n')
+            } else {
+                repr.push(' ')
+            }
+        }
+        write!(f, "{}", repr)
+    }
+}
+
 impl Distribution<Card> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Card {
         Card::from_num(rng.gen_range(0, 16))
@@ -269,23 +291,6 @@ pub fn shift_bitmap(board: u32, pos: u32) -> u32 {
         board.overflowing_shr(12 - pos).0
     };
     shifted & SHIFT_MASK[pos as usize]
-}
-
-pub fn print_bitmap(bitmap: u32) {
-    let mut repr = String::new();
-    for index in 0..25u32 {
-        if bitmap.test_bit(index) {
-            repr.push('1');
-        } else {
-            repr.push('0');
-        }
-        if index % 5 == 4 {
-            repr.push('\n')
-        } else {
-            repr.push(' ')
-        }
-    }
-    println!("{}", repr)
 }
 
 #[cfg(test)]
