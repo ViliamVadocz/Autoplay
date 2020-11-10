@@ -1,5 +1,6 @@
 use crate::bot::get_move;
 use crate::cards::Card;
+use crate::color::Color;
 use crate::connection::{Connection, Participant};
 use crate::error::Result;
 use crate::game::{Game, Move};
@@ -36,13 +37,10 @@ pub fn run() -> Result<()> {
             p = conn.join_match(&match_id)?; // TODO ask again for match id if error
         }
         let mut game = Game::from_state_msg(conn.recv_state()?)?;
+        let (white, black) = game.get_white_black();
         println!(
             "This game's cards:\n{}{}{}{}{}",
-            game.white.cards[0],
-            game.white.cards[1],
-            game.black.cards[0],
-            game.black.cards[1],
-            game.table_card
+            white.cards[0], white.cards[1], black.cards[0], black.cards[1], game.table_card
         );
         println!(
             "You are playing as {}.",
@@ -50,7 +48,7 @@ pub fn run() -> Result<()> {
         );
         while game.in_progress {
             println!("{}", game);
-            if game.white_to_move == p.white {
+            if let Color::White = game.color {
                 let my_move = if manual {
                     get_move_input(&game)?
                 } else {
@@ -156,12 +154,7 @@ fn get_move_input(game: &Game) -> Result<Move> {
         }
         let card = card_result.unwrap();
         // check if card in hand
-        let my = if game.white_to_move {
-            &game.white
-        } else {
-            &game.black
-        };
-        if !my.cards.iter().any(|&c| c == card) {
+        if !game.my.cards.iter().any(|&c| c == card) {
             println!("{} is not in your hand", card);
             continue;
         }
@@ -169,7 +162,7 @@ fn get_move_input(game: &Game) -> Result<Move> {
         let the_move = Move {
             from,
             to,
-            used_left_card: my.cards[0] == card,
+            used_left_card: game.my.cards[0] == card,
         };
         let moves = game.gen_moves();
         if moves.contains(&the_move) {

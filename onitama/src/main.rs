@@ -12,6 +12,7 @@ mod macros;
 mod bot;
 mod cards;
 mod cli;
+mod color;
 mod connection;
 mod error;
 mod game;

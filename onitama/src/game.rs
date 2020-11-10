@@ -1,7 +1,8 @@
 use arrayvec::ArrayVec;
 use bitwise::{ClearBit, SetBit, TestBit};
 
-use crate::cards::{draw_cards, shift_bitmap, Card};
+use crate::cards::{draw_cards, shift_bitmap, BitIter, Card};
+use crate::color::Color;
 use crate::error::Result;
 use crate::messages::*;
 use std::fmt;
@@ -22,10 +23,10 @@ pub struct Player {
 
 #[derive(Clone)]
 pub struct Game {
-    pub white: Player,
-    pub black: Player,
+    pub my: Player,
+    pub other: Player,
     pub table_card: Card,
-    pub white_to_move: bool,
+    pub color: Color,
     pub in_progress: bool,
 }
 
@@ -35,118 +36,107 @@ impl Game {
         Game::from_cards(cards)
     }
 
+    pub fn goal(&self) -> u8 {
+        match self.color {
+            Color::Black => 22,
+            Color::White => 2,
+        }
+    }
+
+    pub fn get_white_black(&self) -> (&Player, &Player) {
+        match self.color {
+            Color::White => (&self.my, &self.other),
+            Color::Black => (&self.other, &self.my),
+        }
+    }
+
     pub fn from_cards(mut cards: Vec<Card>) -> Game {
-        let last_card = cards.pop().unwrap();
-        let white_to_move = last_card.is_white();
+        let table_card = cards.pop().unwrap();
+        let color = table_card.get_color();
+        let white = Player {
+            cards: [cards.pop().unwrap(), cards.pop().unwrap()],
+            pieces: board!(
+                0 0 0 0 0
+                0 0 0 0 0
+                0 0 0 0 0
+                0 0 0 0 0
+                1 1 1 1 1
+            ),
+            king: 22,
+        };
+        let black = Player {
+            cards: [cards.pop().unwrap(), cards.pop().unwrap()],
+            pieces: board!(
+                1 1 1 1 1
+                0 0 0 0 0
+                0 0 0 0 0
+                0 0 0 0 0
+                0 0 0 0 0
+            ),
+            king: 2,
+        };
+        let (my, other) = match color {
+            Color::White => (white, black),
+            Color::Black => (black, white),
+        };
         Game {
-            white: Player {
-                cards: [cards.pop().unwrap(), cards.pop().unwrap()],
-                pieces: board!(
-                    0 0 0 0 0
-                    0 0 0 0 0
-                    0 0 0 0 0
-                    0 0 0 0 0
-                    1 1 1 1 1
-                ),
-                king: 22,
-            },
-            black: Player {
-                cards: [cards.pop().unwrap(), cards.pop().unwrap()],
-                pieces: board!(
-                    1 1 1 1 1
-                    0 0 0 0 0
-                    0 0 0 0 0
-                    0 0 0 0 0
-                    0 0 0 0 0
-                ),
-                king: 2,
-            },
-            table_card: last_card,
-            white_to_move,
+            my,
+            other,
+            table_card,
+            color,
             in_progress: true,
         }
     }
 
     pub fn take_turn(&self, my_move: &Move) -> Game {
-        let is_white = self.white_to_move;
-
-        let (my, other, goal) = if is_white {
-            (&self.white, &self.black, 2)
-        } else {
-            (&self.black, &self.white, 22)
-        };
-
         // move king
-        let king_move = my.king == my_move.from;
+        let king_move = self.my.king == my_move.from;
         // card management
         let card_index = my_move.used_left_card as usize;
-        let table_card = my.cards[1 - card_index];
+        let table_card = self.my.cards[1 - card_index];
         // king capture
-        let king_capture = my_move.to == other.king;
+        let king_capture = my_move.to == self.other.king;
 
         let my = Player {
-            cards: [my.cards[card_index], self.table_card],
-            pieces: my.pieces.clear_bit(my_move.from).set_bit(my_move.to),
-            king: if king_move { my_move.to } else { my.king },
+            cards: [self.my.cards[card_index], self.table_card],
+            pieces: self.my.pieces.clear_bit(my_move.from).set_bit(my_move.to),
+            king: if king_move { my_move.to } else { self.my.king },
         };
 
         let other = Player {
-            cards: other.cards,
-            pieces: other.pieces.clear_bit(my_move.to),
-            king: if king_capture { 25 } else { other.king }, // move out of board, doesn't get displayed
+            cards: self.other.cards,
+            pieces: self.other.pieces.clear_bit(my_move.to),
+            king: if king_capture { 25 } else { self.other.king }, // move out of board, doesn't get displayed
         };
 
-        // switch turn
-        let white_to_move = !is_white;
-
         // check for king capture or reaching end
-        let in_progress = !king_capture && my.king != goal;
+        let in_progress = !king_capture && self.my.king != self.goal();
 
-        let (white, black) = if is_white { (my, other) } else { (other, my) };
         Game {
-            white,
-            black,
+            my: other,
+            other: my,
             table_card,
-            white_to_move,
+            color: self.color.next(),
             in_progress,
         }
     }
 
     pub fn gen_moves(&self) -> ArrayVec<[Move; 40]> {
-        let (my, left, right) = if self.white_to_move {
-            (
-                &self.white,
-                self.white.cards[0].get_white(),
-                self.white.cards[1].get_white(),
-            )
-        } else {
-            (
-                &self.black,
-                self.black.cards[0].get_black(),
-                self.black.cards[1].get_black(),
-            )
-        };
-
+        let left = self.my.cards[0].get_move(self.color);
+        let right = self.my.cards[1].get_move(self.color);
         let mut moves = ArrayVec::new();
         // for every one of my pieces, try each card
-        let mut pieces = my.pieces;
-        while pieces != 0 {
-            let from_pos = pieces.trailing_zeros();
-            pieces = pieces.clear_bit(from_pos);
-            let mut left_shifted = shift_bitmap(left, from_pos) & !my.pieces;
-            while left_shifted != 0 {
-                let to_pos = left_shifted.trailing_zeros();
-                left_shifted = left_shifted.clear_bit(to_pos);
+        for from_pos in BitIter(self.my.pieces) {
+            let left_shifted = shift_bitmap(left, from_pos) & !self.my.pieces;
+            for to_pos in BitIter(left_shifted) {
                 moves.push(Move {
                     from: from_pos as u8,
                     to: to_pos as u8,
                     used_left_card: true,
                 });
             }
-            let mut right_shifted = shift_bitmap(right, from_pos) & !my.pieces;
-            while right_shifted != 0 {
-                let to_pos = right_shifted.trailing_zeros();
-                right_shifted = right_shifted.clear_bit(to_pos);
+            let right_shifted = shift_bitmap(right, from_pos) & !self.my.pieces;
+            for to_pos in BitIter(right_shifted) {
                 moves.push(Move {
                     from: from_pos as u8,
                     to: to_pos as u8,
@@ -157,13 +147,13 @@ impl Game {
         // if no available moves, you can skip, but you still need to use a card
         if moves.is_empty() {
             moves.push(Move {
-                from: my.king,
-                to: my.king,
+                from: self.my.king,
+                to: self.my.king,
                 used_left_card: true,
             });
             moves.push(Move {
-                from: my.king,
-                to: my.king,
+                from: self.my.king,
+                to: self.my.king,
                 used_left_card: false,
             });
         }
@@ -172,28 +162,14 @@ impl Game {
     }
 
     pub fn count_moves(&self) -> usize {
-        let (my, left, right) = if self.white_to_move {
-            (
-                &self.white,
-                self.white.cards[0].get_white(),
-                self.white.cards[1].get_white(),
-            )
-        } else {
-            (
-                &self.black,
-                self.black.cards[0].get_black(),
-                self.black.cards[1].get_black(),
-            )
-        };
+        let left = self.my.cards[0].get_move(self.color);
+        let right = self.my.cards[1].get_move(self.color);
         let mut total = 0;
 
         // for every one of my pieces, try each card
-        let mut pieces = my.pieces;
-        while pieces != 0 {
-            let from_pos = pieces.trailing_zeros();
-            pieces = pieces.clear_bit(from_pos);
-            total += (shift_bitmap(left, from_pos) & !my.pieces).count_ones() as usize;
-            total += (shift_bitmap(right, from_pos) & !my.pieces).count_ones() as usize;
+        for from_pos in BitIter(self.my.pieces) {
+            total += (shift_bitmap(left, from_pos) & !self.my.pieces).count_ones() as usize;
+            total += (shift_bitmap(right, from_pos) & !self.my.pieces).count_ones() as usize;
         }
         // if no available moves, you can skip, but you still need to use a card
         if total != 0 {
@@ -207,33 +183,31 @@ impl Game {
 impl fmt::Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut output = String::new();
-
         // colour to move
         if self.in_progress {
-            if self.white_to_move {
-                output.push_str("White to move\n")
-            } else {
-                output.push_str("Black to move\n")
-            }
+            match self.color {
+                Color::White => output.push_str("White to move\n"),
+                Color::Black => output.push_str("White to move\n"),
+            };
         } else {
-            if self.white_to_move {
-                output.push_str("Black won\n");
-            } else {
-                output.push_str("White won\n")
-            }
+            match self.color {
+                Color::White => output.push_str("Black won\n"),
+                Color::Black => output.push_str("White won\n"),
+            };
         }
+        let (white, black) = self.get_white_black();
 
         // board
         let mut board = String::new();
         for i in 0..25 {
-            if self.white.pieces.test_bit(i) {
-                if i == self.white.king {
+            if white.pieces.test_bit(i) {
+                if i == white.king {
                     board.push('♔');
                 } else {
                     board.push('♙');
                 }
-            } else if self.black.pieces.test_bit(i) {
-                if i == self.black.king {
+            } else if black.pieces.test_bit(i) {
+                if i == black.king {
                     board.push('♚');
                 } else {
                     board.push('♟');
@@ -249,8 +223,8 @@ impl fmt::Display for Game {
         output.push_str(&board);
 
         // cards
-        output.push_str(&format!("Black cards: {:?}\n", self.black.cards));
-        output.push_str(&format!("White cards: {:?}\n", self.white.cards));
+        output.push_str(&format!("Black cards: {:?}\n", black.cards));
+        output.push_str(&format!("White cards: {:?}\n", white.cards));
         output.push_str(&format!("Table card: {:?}\n", self.table_card));
 
         write!(f, "{}", output)
@@ -296,19 +270,25 @@ impl Game {
         let table_card = Card::from_text(&state_msg.cards.side)?;
         let in_progress = is_in_progress(state_msg.game_state)?;
 
+        let white = Player {
+            cards: white_cards,
+            pieces: white,
+            king: white_king,
+        };
+        let black = Player {
+            cards: black_cards,
+            pieces: black,
+            king: black_king,
+        };
+        let (my, other, color) = match white_to_move {
+            true => (white, black, Color::White),
+            false => (black, white, Color::Black),
+        };
         Ok(Game {
-            white: Player {
-                cards: white_cards,
-                pieces: white,
-                king: white_king,
-            },
-            black: Player {
-                cards: black_cards,
-                pieces: black,
-                king: black_king,
-            },
+            my,
+            other,
             table_card,
-            white_to_move,
+            color,
             in_progress,
         })
     }
