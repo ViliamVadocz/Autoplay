@@ -110,7 +110,7 @@ impl Game {
         };
 
         // check for king capture or reaching end
-        let in_progress = !king_capture && self.my.king != self.goal();
+        let in_progress = !king_capture && my.king != self.goal();
 
         Game {
             my: other,
@@ -187,7 +187,7 @@ impl fmt::Display for Game {
         if self.in_progress {
             match self.color {
                 Color::White => output.push_str("White to move\n"),
-                Color::Black => output.push_str("White to move\n"),
+                Color::Black => output.push_str("Black to move\n"),
             };
         } else {
             match self.color {
