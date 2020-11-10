@@ -126,9 +126,9 @@ impl Game {
         let right = self.my.cards[1].get_move(self.color);
         let mut moves = ArrayVec::new();
         // for every one of my pieces, try each card
-        for (from_pos, _) in BitIter(self.my.pieces) {
+        for from_pos in BitIter(self.my.pieces) {
             let left_shifted = shift_bitmap(left, from_pos) & !self.my.pieces;
-            for (to_pos, _) in BitIter(left_shifted) {
+            for to_pos in BitIter(left_shifted) {
                 moves.push(Move {
                     from: from_pos as u8,
                     to: to_pos as u8,
@@ -136,7 +136,7 @@ impl Game {
                 });
             }
             let right_shifted = shift_bitmap(right, from_pos) & !self.my.pieces;
-            for (to_pos, _) in BitIter(right_shifted) {
+            for to_pos in BitIter(right_shifted) {
                 moves.push(Move {
                     from: from_pos as u8,
                     to: to_pos as u8,
@@ -167,7 +167,7 @@ impl Game {
         let mut total = 0;
 
         // for every one of my pieces, try each card
-        for (from_pos, _) in BitIter(self.my.pieces) {
+        for from_pos in BitIter(self.my.pieces) {
             total += (shift_bitmap(left, from_pos) & !self.my.pieces).count_ones() as usize;
             total += (shift_bitmap(right, from_pos) & !self.my.pieces).count_ones() as usize;
         }
