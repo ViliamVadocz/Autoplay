@@ -1,4 +1,4 @@
-use crate::bot::get_move;
+use crate::bot::{get_move, get_move_hytak};
 use crate::cards::Card;
 use crate::color::Color;
 use crate::connection::{Connection, Participant};
@@ -91,20 +91,17 @@ pub fn run() -> Result<()> {
             }
         }
         // let white = choice("white", "black")?;
+        let (white, black) = game.get_white_black();
         println!(
             "This game's cards:\n{}{}{}{}{}",
-            game.white.cards[0],
-            game.white.cards[1],
-            game.black.cards[0],
-            game.black.cards[1],
-            game.table_card
+            white.cards[0], white.cards[1], black.cards[0], black.cards[1], game.table_card
         );
         while game.in_progress {
             println!("{}", game);
             let my_move = if manual {
                 get_move_input(&game)?
             } else {
-                get_move(&game)
+                get_move_hytak(&game)
             };
             game = game.take_turn(&my_move);
         }

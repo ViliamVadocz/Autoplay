@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use crate::cards::shift_bitmap;
 use crate::game::{Game, Move};
 use bitwise::ClearBit;
@@ -53,6 +55,71 @@ pub fn get_move(g: &Game) -> Move {
         .into_iter()
         .map(|m| (eval_move(g, &m, SEARCH_DEPTH), m))
         .max_by_key(|x| x.0)
+        .unwrap()
+        .1
+}
+
+#[derive(Eq, PartialEq, PartialOrd, Copy, Clone)]
+enum Value {
+    Win(u8),
+    Loss(u8),
+    Unknown,
+}
+
+impl Value {
+    fn next(self) -> Self {
+        match self {
+            Value::Win(x) => Value::Loss(x + 1),
+            Value::Loss(x) => Value::Win(x + 1),
+            Value::Unknown => Value::Unknown,
+        }
+    }
+}
+
+impl Ord for Value {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self {
+            Value::Win(x) => match other {
+                Value::Win(y) => x.cmp(y),
+                Value::Unknown => Ordering::Greater,
+                Value::Loss(_) => Ordering::Greater,
+            },
+            Value::Unknown => match other {
+                Value::Win(_) => Ordering::Less,
+                Value::Unknown => Ordering::Equal,
+                Value::Loss(_) => Ordering::Greater,
+            },
+            Value::Loss(x) => match other {
+                Value::Win(_) => Ordering::Less,
+                Value::Unknown => Ordering::Less,
+                Value::Loss(y) => y.cmp(x),
+            },
+        }
+    }
+}
+
+fn get_value_hytak(g: &Game, depth: u8) -> Value {
+    if !g.in_progress {
+        Value::Loss(0)
+    } else if depth == 0 {
+        Value::Unknown
+    } else {
+        g.gen_moves()
+            .iter()
+            .map(|m| get_value_hytak(&g.take_turn(m), depth - 1))
+            .filter(|v| v != &Value::Unknown)
+            .min()
+            .unwrap_or(Value::Unknown)
+            .next()
+    }
+}
+
+const SEARCH_DEPTH_HYTAK: u8 = 6;
+pub fn get_move_hytak(g: &Game) -> Move {
+    g.gen_moves()
+        .into_iter()
+        .map(|m| (get_value_hytak(&g.take_turn(&m), SEARCH_DEPTH_HYTAK), m))
+        .min_by_key(|x| x.0)
         .unwrap()
         .1
 }
