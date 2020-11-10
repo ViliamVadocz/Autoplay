@@ -37,13 +37,10 @@ pub fn run() -> Result<()> {
             p = conn.join_match(&match_id)?; // TODO ask again for match id if error
         }
         let mut game = Game::from_state_msg(conn.recv_state()?)?;
+        let (white, black) = game.get_white_black();
         println!(
             "This game's cards:\n{}{}{}{}{}",
-            game.my.cards[0],
-            game.my.cards[1],
-            game.other.cards[0],
-            game.other.cards[1],
-            game.table_card
+            white.cards[0], white.cards[1], black.cards[0], black.cards[1], game.table_card
         );
         println!(
             "You are playing as {}.",

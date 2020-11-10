@@ -45,6 +45,13 @@ impl Game {
         Game::from_cards(cards)
     }
 
+    pub fn get_white_black(&self) -> (&Player, &Player) {
+        match self.color {
+            Color::White => (&self.my, &self.other),
+            Color::Black => (&self.other, &self.my),
+        }
+    }
+
     pub fn from_cards(mut cards: Vec<Card>) -> Game {
         let table_card = cards.pop().unwrap();
         let color = table_card.get_color();
@@ -177,16 +184,12 @@ impl fmt::Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut output = String::new();
         // colour to move
-        let (white, black) = match self.color {
-            Color::White => {
-                output.push_str("White to move\n");
-                (&self.my, &self.other)
-            }
-            Color::Black => {
-                output.push_str("White to move\n");
-                (&self.other, &self.my)
-            }
+        match self.color {
+            Color::White => output.push_str("White to move\n"),
+            Color::Black => output.push_str("White to move\n"),
         };
+
+        let (white, black) = self.get_white_black();
 
         // board
         let mut board = String::new();
