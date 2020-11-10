@@ -7,7 +7,7 @@ use websocket::{ClientBuilder, Message, OwnedMessage};
 
 pub struct Participant {
     pub token: String,
-    pub white: bool,
+    pub red: bool,
 }
 
 pub struct Connection {
@@ -45,7 +45,7 @@ impl Connection {
                 msg.match_id,
                 Participant {
                     token: msg.token,
-                    white: color_is_white(msg.color)?,
+                    red: color_is_red(msg.color)?,
                 },
             ))
         } else {
@@ -59,7 +59,7 @@ impl Connection {
         if let LitamaMessage::Join(msg) = message {
             Ok(Participant {
                 token: msg.token,
-                white: color_is_white(msg.color)?,
+                red: color_is_red(msg.color)?,
             })
         } else {
             Err(Box::new(UnexpectedMessage::new(message)))

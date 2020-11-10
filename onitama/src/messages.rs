@@ -41,7 +41,7 @@ pub struct StateMsg {
     pub current_turn: String,
     pub cards: CardsObj,
     // pub starting_cards: CardsObj,
-    pub moves: Vec<String>,
+    // pub moves: Vec<String>,
     pub board: String,
     pub game_state: String,
     pub winner: String,
@@ -75,7 +75,7 @@ pub struct ErrorMsg {
     pub command: String,
 }
 
-pub fn color_is_white(color: String) -> Result<bool> {
+pub fn color_is_red(color: String) -> Result<bool> {
     match color.as_ref() {
         "red" => Ok(true),
         "blue" => Ok(false),

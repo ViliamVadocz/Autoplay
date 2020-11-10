@@ -7,7 +7,7 @@ use bitwise::ClearBit;
 const PIECE_WEIGHT: i64 = 10;
 const SQUARE_WEIGHT: i64 = 1;
 
-// positive is good for white, negative is good for black
+// positive is good for red, negative is good for blue
 pub fn game_eval(g: Game) -> i64 {
     if !g.in_progress {
         i64::MIN

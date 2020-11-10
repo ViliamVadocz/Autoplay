@@ -37,18 +37,15 @@ pub fn run() -> Result<()> {
             p = conn.join_match(&match_id)?; // TODO ask again for match id if error
         }
         let mut game = Game::from_state_msg(conn.recv_state()?)?;
-        let (white, black) = game.get_white_black();
+        let (red, blue) = game.get_red_blue();
         println!(
             "This game's cards:\n{}{}{}{}{}",
-            white.cards[0], white.cards[1], black.cards[0], black.cards[1], game.table_card
+            red.cards[0], red.cards[1], blue.cards[0], blue.cards[1], game.table_card
         );
-        println!(
-            "You are playing as {}.",
-            if p.white { "WHITE" } else { "BLACK" }
-        );
+        println!("You are playing as {}.", if p.red { "RED" } else { "BLUE" });
         while game.in_progress {
             println!("{}", game);
-            if let Color::White = game.color {
+            if let Color::Red = game.color {
                 let my_move = if manual {
                     get_move_input(&game)?
                 } else {
@@ -90,11 +87,11 @@ pub fn run() -> Result<()> {
                 break;
             }
         }
-        // let white = choice("white", "black")?;
-        let (white, black) = game.get_white_black();
+        // let red = choice("red", "blue")?;
+        let (red, blue) = game.get_red_blue();
         println!(
             "This game's cards:\n{}{}{}{}{}",
-            white.cards[0], white.cards[1], black.cards[0], black.cards[1], game.table_card
+            red.cards[0], red.cards[1], blue.cards[0], blue.cards[1], game.table_card
         );
         while game.in_progress {
             println!("{}", game);
