@@ -14,8 +14,8 @@ use std::io::{stdin, stdout};
 // TODO add colours with https://docs.rs/ansi_term/0.12.1/ansi_term/
 
 pub fn run() -> Result<()> {
-    let manual = choice("manual", "bot")?;
     let online = choice("online", "local")?;
+    let manual = choice("manual", "bot")?;
 
     if online {
         // connect to server
@@ -55,29 +55,72 @@ pub fn run() -> Result<()> {
                     get_move(&game)
                 };
                 conn.send(&move_to_command(&my_move, &match_id, &p.token, &game))?;
-                println!("{:#?}", conn.recv()?);
+                // println!("{:#?}", conn.recv()?);
             }
             game = Game::from_state_msg(conn.recv_state()?)?;
         }
+        println!("{}", game);
+
+    // local
     } else {
-        let white = choice("white", "black")?;
         let random = choice("random", "preset")?;
+        // create game
+        let mut game: Game;
         if random {
-            // TODO random cards
-            println!("generating random cards")
+            game = Game::new();
         } else {
-            // TODO ask for cards
-            println!("enter cards..............")
+            // ask for cards
+            loop {
+                let cards_result = input(&"input cards (format: [c1] [c2] [c3] [c4] [c5])\n> ")?
+                    .to_lowercase()
+                    .trim()
+                    .split_whitespace()
+                    .map(|text| Card::from_text(text))
+                    .collect::<Result<Vec<Card>>>();
+                if cards_result.is_err() {
+                    println!("error parsing cards {:?}", cards_result);
+                    continue;
+                }
+                let cards = cards_result.unwrap();
+                if cards.len() != 5 {
+                    println!("expected 5 cards, got {}", cards.len());
+                    continue;
+                }
+                game = Game::from_cards(cards);
+                break;
+            }
         }
-        // TODO play the game
-        println!("game game game")
+        // let white = choice("white", "black")?;
+        println!(
+            "This game's cards:\n{}{}{}{}{}",
+            game.white.cards[0],
+            game.white.cards[1],
+            game.black.cards[0],
+            game.black.cards[1],
+            game.table_card
+        );
+        while game.in_progress {
+            println!("{}", game);
+            let my_move = if manual {
+                get_move_input(&game)?
+            } else {
+                get_move(&game)
+            };
+            game = game.take_turn(&my_move);
+        }
+        println!("{}", game);
     }
     Ok(())
 }
 
 fn get_move_input(game: &Game) -> Result<Move> {
     loop {
-        let ans = input(&"enter move (format: [card] [from] [to])\n> ")?.to_lowercase();
+        let ans = input(&"enter move (format: [card] [from] [to]) or let bot play with [bot]\n> ")?
+            .to_lowercase();
+        // let bot play
+        if ans.contains("bot") {
+            return Ok(get_move(&game));
+        }
         let mut words: Vec<&str> = ans.split_whitespace().collect();
         let num_words = words.len();
 

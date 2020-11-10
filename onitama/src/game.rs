@@ -7,7 +7,7 @@ use crate::error::Result;
 use crate::messages::*;
 use std::fmt;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq)]
 pub struct Move {
     pub from: u8,
     pub to: u8,
@@ -30,19 +30,17 @@ pub struct Game {
     pub in_progress: bool,
 }
 
-impl Color {
-    fn goal(self) -> u8 {
-        match self {
-            Color::Black => 22,
-            Color::White => 2,
-        }
-    }
-}
-
 impl Game {
     pub fn new() -> Game {
         let cards = draw_cards();
         Game::from_cards(cards)
+    }
+
+    pub fn goal(&self) -> u8 {
+        match self.color {
+            Color::Black => 22,
+            Color::White => 2,
+        }
     }
 
     pub fn get_white_black(&self) -> (&Player, &Player) {
@@ -96,6 +94,8 @@ impl Game {
         // card management
         let card_index = my_move.used_left_card as usize;
         let table_card = self.my.cards[1 - card_index];
+        // king capture
+        let king_capture = my_move.to == self.other.king;
 
         let my = Player {
             cards: [self.my.cards[card_index], self.table_card],
@@ -106,11 +106,11 @@ impl Game {
         let other = Player {
             cards: self.other.cards,
             pieces: self.other.pieces.clear_bit(my_move.to),
-            king: self.other.king,
+            king: if king_capture { 25 } else { self.other.king }, // move out of board, doesn't get displayed
         };
 
         // check for king capture or reaching end
-        let in_progress = other.king != my_move.to && my.king != self.color.goal();
+        let in_progress = !king_capture && self.my.king != self.goal();
 
         Game {
             my: other,
@@ -184,11 +184,17 @@ impl fmt::Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut output = String::new();
         // colour to move
-        match self.color {
-            Color::White => output.push_str("White to move\n"),
-            Color::Black => output.push_str("White to move\n"),
-        };
-
+        if self.in_progress {
+            match self.color {
+                Color::White => output.push_str("White to move\n"),
+                Color::Black => output.push_str("White to move\n"),
+            };
+        } else {
+            match self.color {
+                Color::White => output.push_str("Black won\n"),
+                Color::Black => output.push_str("White won\n"),
+            };
+        }
         let (white, black) = self.get_white_black();
 
         // board
