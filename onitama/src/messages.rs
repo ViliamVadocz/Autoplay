@@ -1,5 +1,5 @@
-use crate::error::{Result, UnexpectedVariant};
 use crate::game::{Game, Move};
+use std::result::Result;
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "messageType")]
@@ -75,20 +75,20 @@ pub struct ErrorMsg {
     pub command: String,
 }
 
-pub fn color_is_red(color: String) -> Result<bool> {
+pub fn color_is_red(color: String) -> Result<bool, String> {
     match color.as_ref() {
         "red" => Ok(true),
         "blue" => Ok(false),
-        _ => Err(Box::new(UnexpectedVariant::new(color))),
+        _ => Err(format!("Unknown color: {}", color)),
     }
 }
 
-pub fn is_in_progress(game_state: String) -> Result<bool> {
+pub fn is_in_progress(game_state: String) -> Result<bool, String> {
     match game_state.as_ref() {
         "waiting for player" => Ok(true),
         "in progress" => Ok(true),
         "ended" => Ok(false),
-        _ => Err(Box::new(UnexpectedVariant::new(game_state))),
+        _ => Err(format!("Unknown game state: {}", game_state)),
     }
 }
 
@@ -96,23 +96,23 @@ pub fn translate_pos(pos: usize) -> String {
     let row = pos / 5;
     let col = pos % 5;
     [
-        "abcde".chars().nth(row).unwrap(),
-        "12345".chars().nth(col).unwrap(),
+        "abcde".chars().nth(col).unwrap(),
+        "12345".chars().nth(row).unwrap(),
     ]
     .iter()
     .collect::<String>()
 }
 
-pub fn translate_pos_back(pos: &str) -> Result<usize> {
+pub fn translate_pos_back(pos: &str) -> Result<usize, String> {
     let mut chars = pos.chars();
-    let first = chars.next().ok_or("pos too short")?;
-    let second = chars.next().ok_or("pos too short")?;
-    let row = "abcde"
+    let first = chars.next().ok_or("Given pos is too short")?;
+    let second = chars.next().ok_or("Given pos is too short")?;
+    let col = "abcde"
         .find(first)
-        .ok_or(format!("{} is an invalid row", first))?;
-    let col = "12345"
+        .ok_or(format!("`{}` is an invalid column", first))?;
+    let row = "12345"
         .find(second)
-        .ok_or(format!("{} is an invalid col", second))?;
+        .ok_or(format!("`{}` is an invalid row", second))?;
     Ok(row * 5 + col)
 }
 

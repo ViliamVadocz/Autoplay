@@ -1,5 +1,4 @@
 use crate::color::Color;
-use crate::error::{Result, UnexpectedVariant};
 use array_const_fn_init::array_const_fn_init;
 use bitwise::TestBit;
 use rand::{
@@ -7,6 +6,7 @@ use rand::{
     Rng,
 };
 use std::fmt;
+use std::result::Result;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Card {
@@ -128,7 +128,6 @@ const fn const_card(num: usize) -> u32 {
                    0 0 0 0 0
                    0 0 1 0 0
                    0 0 0 0 0),
-            
     }
 }
 
@@ -189,7 +188,7 @@ impl Card {
         }
     }
 
-    pub fn from_text(text: &str) -> Result<Card> {
+    pub fn from_text(text: &str) -> Result<Card, String> {
         match text {
             "boar" => Ok(Card::Boar),
             "cobra" => Ok(Card::Cobra),
@@ -207,7 +206,7 @@ impl Card {
             "rabbit" => Ok(Card::Rabbit),
             "rooster" => Ok(Card::Rooster),
             "tiger" => Ok(Card::Tiger),
-            _ => Err(Box::new(UnexpectedVariant::new(text.to_string()))),
+            _ => Err(format!("Unknown card {}", text)),
         }
     }
 

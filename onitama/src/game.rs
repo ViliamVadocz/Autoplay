@@ -3,7 +3,6 @@ use bitwise::{ClearBit, SetBit, TestBit};
 
 use crate::cards::{draw_cards, shift_bitmap, BitIter, Card};
 use crate::color::Color;
-use crate::error::Result;
 use crate::messages::*;
 use std::fmt;
 
@@ -232,7 +231,7 @@ impl fmt::Display for Game {
 }
 
 impl Game {
-    pub fn from_state_msg(state_msg: StateMsg) -> Result<Game> {
+    pub fn from_state_msg(state_msg: StateMsg) -> Game {
         let mut red = 0u32;
         let mut blue = 0u32;
         let mut red_king = 0;
@@ -258,17 +257,17 @@ impl Game {
             };
         }
 
-        let red_to_move = color_is_red(state_msg.current_turn)?;
+        let red_to_move = color_is_red(state_msg.current_turn).unwrap();
         let red_cards = [
-            Card::from_text(&state_msg.cards.red[0])?,
-            Card::from_text(&state_msg.cards.red[1])?,
+            Card::from_text(&state_msg.cards.red[0]).unwrap(),
+            Card::from_text(&state_msg.cards.red[1]).unwrap(),
         ];
         let blue_cards = [
-            Card::from_text(&state_msg.cards.blue[0])?,
-            Card::from_text(&state_msg.cards.blue[1])?,
+            Card::from_text(&state_msg.cards.blue[0]).unwrap(),
+            Card::from_text(&state_msg.cards.blue[1]).unwrap(),
         ];
-        let table_card = Card::from_text(&state_msg.cards.side)?;
-        let in_progress = is_in_progress(state_msg.game_state)?;
+        let table_card = Card::from_text(&state_msg.cards.side).unwrap();
+        let in_progress = is_in_progress(state_msg.game_state).unwrap();
 
         let red = Player {
             cards: red_cards,
@@ -284,13 +283,13 @@ impl Game {
             true => (red, blue, Color::Red),
             false => (blue, red, Color::Blue),
         };
-        Ok(Game {
+        Game {
             my,
             other,
             table_card,
             color,
             in_progress,
-        })
+        }
     }
 }
 
