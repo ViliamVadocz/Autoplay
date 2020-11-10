@@ -293,6 +293,23 @@ pub fn shift_bitmap(board: u32, pos: u32) -> u32 {
     shifted & SHIFT_MASK[pos as usize]
 }
 
+pub struct BitIter(pub u32);
+
+impl Iterator for BitIter {
+    type Item = (u32, u32);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.0 == 0 {
+            None
+        } else {
+            let i = self.0.trailing_zeros();
+            let map = 1 << i;
+            self.0 &= !map;
+            Some((i, map))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,7 +1,7 @@
 use arrayvec::ArrayVec;
 use bitwise::{ClearBit, SetBit, TestBit};
 
-use crate::cards::{draw_cards, shift_bitmap, Card};
+use crate::cards::{draw_cards, shift_bitmap, BitIter, Card};
 use crate::color::Color;
 use crate::error::Result;
 use crate::messages::*;
@@ -119,24 +119,17 @@ impl Game {
         let right = self.my.cards[1].get_move(self.color);
         let mut moves = ArrayVec::new();
         // for every one of my pieces, try each card
-        let mut pieces = self.my.pieces;
-        while pieces != 0 {
-            let from_pos = pieces.trailing_zeros();
-            pieces = pieces.clear_bit(from_pos);
-            let mut left_shifted = shift_bitmap(left, from_pos) & !self.my.pieces;
-            while left_shifted != 0 {
-                let to_pos = left_shifted.trailing_zeros();
-                left_shifted = left_shifted.clear_bit(to_pos);
+        for (from_pos, _) in BitIter(self.my.pieces) {
+            let left_shifted = shift_bitmap(left, from_pos) & !self.my.pieces;
+            for (to_pos, _) in BitIter(left_shifted) {
                 moves.push(Move {
                     from: from_pos as u8,
                     to: to_pos as u8,
                     used_left_card: true,
                 });
             }
-            let mut right_shifted = shift_bitmap(right, from_pos) & !self.my.pieces;
-            while right_shifted != 0 {
-                let to_pos = right_shifted.trailing_zeros();
-                right_shifted = right_shifted.clear_bit(to_pos);
+            let right_shifted = shift_bitmap(right, from_pos) & !self.my.pieces;
+            for (to_pos, _) in BitIter(right_shifted) {
                 moves.push(Move {
                     from: from_pos as u8,
                     to: to_pos as u8,
@@ -167,10 +160,7 @@ impl Game {
         let mut total = 0;
 
         // for every one of my pieces, try each card
-        let mut pieces = self.my.pieces;
-        while pieces != 0 {
-            let from_pos = pieces.trailing_zeros();
-            pieces = pieces.clear_bit(from_pos);
+        for (from_pos, _) in BitIter(self.my.pieces) {
             total += (shift_bitmap(left, from_pos) & !self.my.pieces).count_ones() as usize;
             total += (shift_bitmap(right, from_pos) & !self.my.pieces).count_ones() as usize;
         }
