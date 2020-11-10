@@ -1,3 +1,4 @@
+use crate::color::Color;
 use crate::error::{Result, UnexpectedVariant};
 use array_const_fn_init::array_const_fn_init;
 use bitwise::TestBit;
@@ -139,32 +140,31 @@ const WHITE_CARDS: [u32; 16] = array_const_fn_init![const_card; 16];
 const BLACK_CARDS: [u32; 16] = array_const_fn_init![const_reversed_card; 16];
 
 impl Card {
-    pub fn get_white(self) -> u32 {
-        WHITE_CARDS[self as usize]
+    pub fn get_move(self, color: Color) -> u32 {
+        match color {
+            Color::Black => BLACK_CARDS[self as usize],
+            Color::White => WHITE_CARDS[self as usize],
+        }
     }
 
-    pub fn get_black(self) -> u32 {
-        BLACK_CARDS[self as usize]
-    }
-
-    pub fn is_white(self) -> bool {
+    pub fn get_color(self) -> Color {
         match self {
-            Card::Boar => true,
-            Card::Cobra => true,
-            Card::Crab => false,
-            Card::Crane => false,
-            Card::Dragon => true,
-            Card::Eel => false,
-            Card::Elephant => true,
-            Card::Frog => true,
-            Card::Goose => false,
-            Card::Horse => true,
-            Card::Mantis => true,
-            Card::Monkey => false,
-            Card::Ox => false,
-            Card::Rabbit => false,
-            Card::Rooster => true,
-            Card::Tiger => false,
+            Card::Boar => Color::White,
+            Card::Cobra => Color::White,
+            Card::Crab => Color::Black,
+            Card::Crane => Color::Black,
+            Card::Dragon => Color::White,
+            Card::Eel => Color::Black,
+            Card::Elephant => Color::White,
+            Card::Frog => Color::White,
+            Card::Goose => Color::Black,
+            Card::Horse => Color::White,
+            Card::Mantis => Color::White,
+            Card::Monkey => Color::Black,
+            Card::Ox => Color::Black,
+            Card::Rabbit => Color::Black,
+            Card::Rooster => Color::White,
+            Card::Tiger => Color::Black,
         }
     }
 
@@ -238,7 +238,7 @@ impl fmt::Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut repr = String::from(self.get_name());
         repr.push('\n');
-        let bitmap = self.get_white();
+        let bitmap = self.get_move(Color::White);
         for index in 0..25u32 {
             if bitmap.test_bit(index) {
                 repr.push('◼');
@@ -300,7 +300,10 @@ mod tests {
 
     #[test]
     fn test_reverse_bitmap() {
-        assert_eq!(Card::Eel.get_white(), Card::Cobra.get_black())
+        assert_eq!(
+            Card::Eel.get_move(Color::White),
+            Card::Cobra.get_move(Color::Black)
+        )
     }
 
     #[test]
@@ -352,7 +355,7 @@ mod tests {
     #[bench]
     fn bench_shift_bitmap(b: &mut Bencher) {
         b.iter(|| {
-            let card = test::black_box(Card::Eel.get_white());
+            let card = test::black_box(Card::Eel.get_move(Color::White));
             shift_bitmap(card, 6)
         });
     }
