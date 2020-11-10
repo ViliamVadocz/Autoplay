@@ -80,7 +80,7 @@ impl Ord for Value {
     fn cmp(&self, other: &Self) -> Ordering {
         match self {
             Value::Win(x) => match other {
-                Value::Win(y) => x.cmp(y),
+                Value::Win(y) => y.cmp(x),
                 Value::Unknown => Ordering::Greater,
                 Value::Loss(_) => Ordering::Greater,
             },
@@ -92,7 +92,7 @@ impl Ord for Value {
             Value::Loss(x) => match other {
                 Value::Win(_) => Ordering::Less,
                 Value::Unknown => Ordering::Less,
-                Value::Loss(y) => y.cmp(x),
+                Value::Loss(y) => x.cmp(y),
             },
         }
     }
@@ -114,7 +114,7 @@ fn get_value_hytak(g: &Game, depth: u8) -> Value {
     }
 }
 
-const SEARCH_DEPTH_HYTAK: u8 = 6;
+const SEARCH_DEPTH_HYTAK: u8 = 7;
 pub fn get_move_hytak(g: &Game) -> Move {
     g.gen_moves()
         .into_iter()
