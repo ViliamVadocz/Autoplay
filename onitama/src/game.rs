@@ -18,7 +18,7 @@ pub struct Move {
 pub struct Player {
     pub cards: [Card; 2],
     pub pieces: u32,
-    king: u8,
+    pub king: u8,
 }
 
 #[derive(Clone)]
