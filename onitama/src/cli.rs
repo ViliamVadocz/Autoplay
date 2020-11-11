@@ -1,4 +1,4 @@
-use crate::bot::{get_move, get_move_hytak};
+use crate::bot::get_move;
 use crate::cards::Card;
 use crate::color::Color;
 use crate::connection::{Connection, Participant};
@@ -52,7 +52,8 @@ pub fn run() {
                 } else {
                     get_move(&game)
                 };
-                conn.send(&move_to_command(&my_move, &match_id, &p.token, &game)).unwrap();
+                conn.send(&move_to_command(&my_move, &match_id, &p.token, &game))
+                    .unwrap();
                 // println!("{:#?}", conn.recv());
             }
             game = Game::from_state_msg(conn.recv_state());
@@ -100,7 +101,7 @@ pub fn run() {
             let my_move = if manual {
                 get_move_input(&game)
             } else {
-                get_move_hytak(&game)
+                get_move(&game)
             };
             game = game.take_turn(&my_move);
         }
@@ -115,7 +116,7 @@ fn get_move_input(game: &Game) -> Move {
             .to_lowercase();
         // let bot play
         if ans.contains("bot") {
-            return get_move_hytak(&game);
+            return get_move(&game);
         }
         let mut words: Vec<&str> = ans.split_whitespace().collect();
         let num_words = words.len();
