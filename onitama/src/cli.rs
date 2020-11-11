@@ -2,68 +2,67 @@ use crate::bot::get_move;
 use crate::cards::Card;
 use crate::color::Color;
 use crate::connection::{Connection, Participant};
-use crate::error::Result;
 use crate::game::{Game, Move};
 use crate::messages::{move_to_command, translate_pos_back};
 use crate::SERVER;
 
 use std::fmt;
+use std::io::Result as IOResult;
 use std::io::Write;
 use std::io::{stdin, stdout};
+use std::result::Result;
 
 // TODO add colours with https://docs.rs/ansi_term/0.12.1/ansi_term/
 
-pub fn run() -> Result<()> {
-    let online = choice("online", "local")?;
-    let manual = choice("manual", "bot")?;
+pub fn run() {
+    let online = choice("online", "local");
+    let manual = choice("manual", "bot");
 
     if online {
         // connect to server
-        let mut conn = Connection::new(SERVER)?;
-        let create_new = choice("create", "join")?;
+        let mut conn = Connection::new(SERVER).unwrap();
+        let create_new = choice("create", "join");
 
         // get the token, colour, and match_id
         let p: Participant;
         let match_id: String;
         if create_new {
             // create a match
-            let tup = conn.create_match()?;
+            let tup = conn.create_match();
             match_id = tup.0;
             p = tup.1;
             println!("match id: {}", match_id);
         } else {
             // join a match
-            match_id = input(&"match id:\n> ")?.trim().to_string();
-            p = conn.join_match(&match_id)?; // TODO ask again for match id if error
+            match_id = input(&"match id:\n> ").unwrap().trim().to_string();
+            p = conn.join_match(&match_id); // TODO ask again for match id if error
         }
-        let mut game = Game::from_state_msg(conn.recv_state()?)?;
-        let (white, black) = game.get_white_black();
+        let mut game = Game::from_state_msg(conn.recv_state());
+        let (red, blue) = game.get_red_blue();
         println!(
             "This game's cards:\n{}{}{}{}{}",
-            white.cards[0], white.cards[1], black.cards[0], black.cards[1], game.table_card
+            red.cards[0], red.cards[1], blue.cards[0], blue.cards[1], game.table_card
         );
-        println!(
-            "You are playing as {}.",
-            if p.white { "WHITE" } else { "BLACK" }
-        );
+        println!("You are playing as {}.", if p.red { "RED" } else { "BLUE" });
         while game.in_progress {
             println!("{}", game);
-            if let Color::White = game.color {
+            if let Color::Red = game.color {
                 let my_move = if manual {
-                    get_move_input(&game)?
+                    get_move_input(&game)
                 } else {
                     get_move(&game)
                 };
-                conn.send(&move_to_command(&my_move, &match_id, &p.token, &game))?;
-                // println!("{:#?}", conn.recv()?);
+                conn.send(&move_to_command(&my_move, &match_id, &p.token, &game))
+                    .unwrap();
+                // println!("{:#?}", conn.recv());
             }
-            game = Game::from_state_msg(conn.recv_state()?)?;
+            game = Game::from_state_msg(conn.recv_state());
         }
         println!("{}", game);
 
     // local
     } else {
-        let random = choice("random", "preset")?;
+        let random = choice("random", "preset");
         // create game
         let mut game: Game;
         if random {
@@ -71,12 +70,13 @@ pub fn run() -> Result<()> {
         } else {
             // ask for cards
             loop {
-                let cards_result = input(&"input cards (format: [c1] [c2] [c3] [c4] [c5])\n> ")?
+                let cards_result = input(&"input cards (format: [c1] [c2] [c3] [c4] [c5])\n> ")
+                    .unwrap()
                     .to_lowercase()
                     .trim()
                     .split_whitespace()
                     .map(|text| Card::from_text(text))
-                    .collect::<Result<Vec<Card>>>();
+                    .collect::<Result<Vec<Card>, _>>();
                 if cards_result.is_err() {
                     println!("error parsing cards {:?}", cards_result);
                     continue;
@@ -90,16 +90,16 @@ pub fn run() -> Result<()> {
                 break;
             }
         }
-        // let white = choice("white", "black")?;
-        let (white, black) = game.get_white_black();
+        // let red = choice("red", "blue")?;
+        let (red, blue) = game.get_red_blue();
         println!(
             "This game's cards:\n{}{}{}{}{}",
-            white.cards[0], white.cards[1], black.cards[0], black.cards[1], game.table_card
+            red.cards[0], red.cards[1], blue.cards[0], blue.cards[1], game.table_card
         );
         while game.in_progress {
             println!("{}", game);
             let my_move = if manual {
-                get_move_input(&game)?
+                get_move_input(&game)
             } else {
                 get_move(&game)
             };
@@ -107,16 +107,16 @@ pub fn run() -> Result<()> {
         }
         println!("{}", game);
     }
-    Ok(())
 }
 
-fn get_move_input(game: &Game) -> Result<Move> {
+fn get_move_input(game: &Game) -> Move {
     loop {
-        let ans = input(&"enter move (format: [card] [from] [to]) or let bot play with [bot]\n> ")?
+        let ans = input(&"enter move (format: [card] [from] [to]) or let bot play with [bot]\n> ")
+            .unwrap()
             .to_lowercase();
         // let bot play
         if ans.contains("bot") {
-            return Ok(get_move(&game));
+            return get_move(&game);
         }
         let mut words: Vec<&str> = ans.split_whitespace().collect();
         let num_words = words.len();
@@ -163,28 +163,28 @@ fn get_move_input(game: &Game) -> Result<Move> {
         };
         let moves = game.gen_moves();
         if moves.contains(&the_move) {
-            return Ok(the_move);
+            return the_move;
         } else {
             println!("that is not a valid move");
         }
     }
 }
 
-fn choice(option_a: &str, option_b: &str) -> Result<bool> {
+fn choice(option_a: &str, option_b: &str) -> bool {
     let question = format!("[ {} | {} ]\n> ", option_a, option_b);
     loop {
-        let ans = input(&question)?.to_lowercase();
+        let ans = input(&question).unwrap().to_lowercase();
         if ans.contains(option_a) {
-            return Ok(true);
+            return true;
         } else if ans.contains(option_b) {
-            return Ok(false);
+            return false;
         } else {
             println!("⚠️  that's not one of the options");
         }
     }
 }
 
-fn input(message: &'_ impl fmt::Display) -> Result<String> {
+fn input(message: &'_ impl fmt::Display) -> IOResult<String> {
     print!("{}", message);
     stdout().flush()?;
     let mut ret = String::new();

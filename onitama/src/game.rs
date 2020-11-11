@@ -3,7 +3,6 @@ use bitwise::{ClearBit, SetBit, TestBit};
 
 use crate::cards::{draw_cards, shift_bitmap, BitIter, Card};
 use crate::color::Color;
-use crate::error::Result;
 use crate::messages::*;
 use std::fmt;
 
@@ -38,22 +37,22 @@ impl Game {
 
     pub fn goal(&self) -> u8 {
         match self.color {
-            Color::Black => 22,
-            Color::White => 2,
+            Color::Blue => 22,
+            Color::Red => 2,
         }
     }
 
-    pub fn get_white_black(&self) -> (&Player, &Player) {
+    pub fn get_red_blue(&self) -> (&Player, &Player) {
         match self.color {
-            Color::White => (&self.my, &self.other),
-            Color::Black => (&self.other, &self.my),
+            Color::Red => (&self.my, &self.other),
+            Color::Blue => (&self.other, &self.my),
         }
     }
 
     pub fn from_cards(mut cards: Vec<Card>) -> Game {
         let table_card = cards.pop().unwrap();
         let color = table_card.get_color();
-        let white = Player {
+        let red = Player {
             cards: [cards.pop().unwrap(), cards.pop().unwrap()],
             pieces: board!(
                 0 0 0 0 0
@@ -64,7 +63,7 @@ impl Game {
             ),
             king: 22,
         };
-        let black = Player {
+        let blue = Player {
             cards: [cards.pop().unwrap(), cards.pop().unwrap()],
             pieces: board!(
                 1 1 1 1 1
@@ -76,8 +75,8 @@ impl Game {
             king: 2,
         };
         let (my, other) = match color {
-            Color::White => (white, black),
-            Color::Black => (black, white),
+            Color::Red => (red, blue),
+            Color::Blue => (blue, red),
         };
         Game {
             my,
@@ -186,28 +185,28 @@ impl fmt::Display for Game {
         // colour to move
         if self.in_progress {
             match self.color {
-                Color::White => output.push_str("White to move\n"),
-                Color::Black => output.push_str("Black to move\n"),
+                Color::Red => output.push_str("Red to move\n"),
+                Color::Blue => output.push_str("Blue to move\n"),
             };
         } else {
             match self.color {
-                Color::White => output.push_str("Black won\n"),
-                Color::Black => output.push_str("White won\n"),
+                Color::Red => output.push_str("Blue won\n"),
+                Color::Blue => output.push_str("Red won\n"),
             };
         }
-        let (white, black) = self.get_white_black();
+        let (red, blue) = self.get_red_blue();
 
         // board
         let mut board = String::new();
         for i in 0..25 {
-            if white.pieces.test_bit(i) {
-                if i == white.king {
+            if red.pieces.test_bit(i) {
+                if i == red.king {
                     board.push('♔');
                 } else {
                     board.push('♙');
                 }
-            } else if black.pieces.test_bit(i) {
-                if i == black.king {
+            } else if blue.pieces.test_bit(i) {
+                if i == blue.king {
                     board.push('♚');
                 } else {
                     board.push('♟');
@@ -223,8 +222,8 @@ impl fmt::Display for Game {
         output.push_str(&board);
 
         // cards
-        output.push_str(&format!("Black cards: {:?}\n", black.cards));
-        output.push_str(&format!("White cards: {:?}\n", white.cards));
+        output.push_str(&format!("Blue cards: {:?}\n", blue.cards));
+        output.push_str(&format!("Red cards: {:?}\n", red.cards));
         output.push_str(&format!("Table card: {:?}\n", self.table_card));
 
         write!(f, "{}", output)
@@ -232,65 +231,65 @@ impl fmt::Display for Game {
 }
 
 impl Game {
-    pub fn from_state_msg(state_msg: StateMsg) -> Result<Game> {
-        let mut white = 0u32;
-        let mut black = 0u32;
-        let mut white_king = 0;
-        let mut black_king = 0;
+    pub fn from_state_msg(state_msg: StateMsg) -> Game {
+        let mut red = 0u32;
+        let mut blue = 0u32;
+        let mut red_king = 0;
+        let mut blue_king = 0;
         for (i, character) in (0..25).zip(state_msg.board.chars()) {
             match character {
                 '0' => {}
                 '1' => {
-                    black = black.set_bit(i);
+                    blue = blue.set_bit(i);
                 }
                 '2' => {
-                    black = black.set_bit(i);
-                    black_king = i;
+                    blue = blue.set_bit(i);
+                    blue_king = i;
                 }
                 '3' => {
-                    white = white.set_bit(i);
+                    red = red.set_bit(i);
                 }
                 '4' => {
-                    white = white.set_bit(i);
-                    white_king = i;
+                    red = red.set_bit(i);
+                    red_king = i;
                 }
                 _ => {}
             };
         }
 
-        let white_to_move = color_is_white(state_msg.current_turn)?;
-        let white_cards = [
-            Card::from_text(&state_msg.cards.red[0])?,
-            Card::from_text(&state_msg.cards.red[1])?,
+        let red_to_move = color_is_red(state_msg.current_turn).unwrap();
+        let red_cards = [
+            Card::from_text(&state_msg.cards.red[0]).unwrap(),
+            Card::from_text(&state_msg.cards.red[1]).unwrap(),
         ];
-        let black_cards = [
-            Card::from_text(&state_msg.cards.blue[0])?,
-            Card::from_text(&state_msg.cards.blue[1])?,
+        let blue_cards = [
+            Card::from_text(&state_msg.cards.blue[0]).unwrap(),
+            Card::from_text(&state_msg.cards.blue[1]).unwrap(),
         ];
-        let table_card = Card::from_text(&state_msg.cards.side)?;
-        let in_progress = is_in_progress(state_msg.game_state)?;
+        let table_card = Card::from_text(&state_msg.cards.side).unwrap();
+        let in_progress = is_in_progress(state_msg.game_state).unwrap();
 
-        let white = Player {
-            cards: white_cards,
-            pieces: white,
-            king: white_king,
+        let red = Player {
+            cards: red_cards,
+            pieces: red,
+            king: red_king,
         };
-        let black = Player {
-            cards: black_cards,
-            pieces: black,
-            king: black_king,
+        let blue = Player {
+            cards: blue_cards,
+            pieces: blue,
+            king: blue_king,
         };
-        let (my, other, color) = match white_to_move {
-            true => (white, black, Color::White),
-            false => (black, white, Color::Black),
+        let (my, other, color) = match red_to_move {
+            true => (red, blue, Color::Red),
+            false => (blue, red, Color::Blue),
         };
-        Ok(Game {
+        Game {
             my,
             other,
             table_card,
             color,
             in_progress,
-        })
+        }
     }
 }
 

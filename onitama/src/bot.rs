@@ -9,7 +9,7 @@ const PIECE_WEIGHT: i64 = 10;
 const SQUARE_WEIGHT: i64 = 1;
 const CHECK_WEIGHT: i64 = 10;
 
-// positive is good for white, negative is good for black
+// positive is good for me, negative is good for other
 pub fn game_eval(g: &Game) -> i64 {
     let mut my_control = 0u32;
     let my_card = g.my.cards[0].get_move(g.color) | g.my.cards[1].get_move(g.color);
