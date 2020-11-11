@@ -85,16 +85,17 @@ impl PartialOrd for Value {
     }
 }
 
-const EVAL_FOR_DEEPENING: f64 = 15.;
+const EVAL_FOR_DEEPENING: f64 = 15.; // decrease this for more aggressive pruning
+const EVAL_OFFSET: i64 = 6; // increase this to make high depth faster
 fn get_value(g: &Game, nodes: f64, eval: i64) -> Value {
     if !g.in_progress {
         Value::Loss(0)
     } else {
         let new_eval = game_eval(&g);
-        let nodes = nodes / ((new_eval + eval + 6) as f64 / EVAL_FOR_DEEPENING).exp();
+        let nodes = nodes / ((new_eval + eval + EVAL_OFFSET) as f64 / EVAL_FOR_DEEPENING).exp();
 
         if nodes <= 1. {
-            Value::Eval(eval)
+            Value::Eval(new_eval)
         } else {
             let moves = g.gen_moves();
             let nodes = nodes / moves.len() as f64;
