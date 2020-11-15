@@ -3,6 +3,7 @@ name = "onitama"
 version = "0.1.0"
 authors = ["Viliam Vadocz <viliam.vadocz@gmail.com>"]
 edition = "2018"
+build = "build.rs"
 
 [profile.bench]
 debug = true
@@ -17,3 +18,4 @@ serde_derive = "1.0"
 websocket = "0.26.2"
 arrayvec = "0.5.2"
 array-const-fn-init = "0.1.1"
+sdl2 = { git = "https://github.com/rust-sdl2/rust-sdl2", default-features=false, features=["image", "ttf"] }
