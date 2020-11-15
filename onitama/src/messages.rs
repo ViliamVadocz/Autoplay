@@ -75,14 +75,6 @@ pub struct ErrorMsg {
     pub command: String,
 }
 
-pub fn color_is_red(color: String) -> Result<bool, String> {
-    match color.as_ref() {
-        "red" => Ok(true),
-        "blue" => Ok(false),
-        _ => Err(format!("Unknown color: {}", color)),
-    }
-}
-
 pub fn is_in_progress(game_state: String) -> Result<bool, String> {
     match game_state.as_ref() {
         "waiting for player" => Ok(true),
@@ -96,18 +88,18 @@ pub fn translate_pos(pos: usize) -> String {
     let row = pos / 5;
     let col = pos % 5;
     [
-        "abcde".chars().nth(col).unwrap(),
+        "edcba".chars().nth(col).unwrap(),
         "12345".chars().nth(row).unwrap(),
     ]
     .iter()
     .collect::<String>()
 }
 
-pub fn translate_pos_back(pos: &str) -> Result<usize, String> {
+pub fn parse_pos(pos: &str) -> Result<usize, String> {
     let mut chars = pos.chars();
     let first = chars.next().ok_or("Given pos is too short")?;
     let second = chars.next().ok_or("Given pos is too short")?;
-    let col = "abcde"
+    let col = "edcba"
         .find(first)
         .ok_or(format!("`{}` is an invalid column", first))?;
     let row = "12345"
@@ -117,24 +109,11 @@ pub fn translate_pos_back(pos: &str) -> Result<usize, String> {
 }
 
 pub fn move_to_command(my_move: &Move, match_id: &str, token: &str, game: &Game) -> String {
-    let mut command = String::from("move ");
-    // match id
-    command.push_str(match_id);
-    command.push(' ');
-    // token
-    command.push_str(token);
-    command.push(' ');
-    // from:to
-    command.push_str(&translate_pos(my_move.from as usize));
-    command.push_str(&translate_pos(my_move.to as usize));
-    command.push(' ');
-    // card
-    let my_cards = game.my.cards;
+    let pos = format!("{}{}", translate_pos(my_move.from as usize), translate_pos(my_move.to as usize));
     let card = if my_move.used_left_card {
-        &my_cards[0]
+        &game.my.cards[0]
     } else {
-        &my_cards[1]
+        &game.my.cards[1]
     };
-    command.push_str(card.get_name());
-    command
+    format!("move {} {} {} {}", match_id, token, pos, card.get_name())   
 }
