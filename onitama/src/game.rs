@@ -257,7 +257,7 @@ impl Game {
             };
         }
 
-        let red_to_move = color_is_red(state_msg.current_turn).unwrap();
+        let color = Color::from(state_msg.current_turn).unwrap();
         let red_cards = [
             Card::from_text(&state_msg.cards.red[0]).unwrap(),
             Card::from_text(&state_msg.cards.red[1]).unwrap(),
@@ -279,9 +279,9 @@ impl Game {
             pieces: blue,
             king: blue_king,
         };
-        let (my, other, color) = match red_to_move {
-            true => (red, blue, Color::Red),
-            false => (blue, red, Color::Blue),
+        let (my, other) = match color {
+            Color::Red => (red, blue),
+            Color::Blue => (blue, red),
         };
         Game {
             my,
