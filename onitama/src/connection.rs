@@ -1,6 +1,6 @@
-use crate::messages::*;
-use crate::game::{Move, Game};
 use crate::color::Color;
+use crate::game::{Game, Move};
+use crate::messages::*;
 use std::marker::Send;
 use std::result::Result;
 use websocket::result::WebSocketResult;
@@ -17,7 +17,7 @@ macro_rules! recv_loop {
                 Err(err) => println!("Error while receiving: {}", err),
             }
         }
-    }
+    };
 }
 
 pub struct Participant {
@@ -79,7 +79,7 @@ impl Connection {
                     color: Color::from(msg.color).unwrap(),
                 },
             )
-        )
+        );
     }
 
     pub fn join_match(&mut self, match_id: &str, username: &str) -> Participant {
@@ -93,7 +93,7 @@ impl Connection {
                 token: msg.token,
                 color: Color::from(msg.color).unwrap(),
             }
-        )
+        );
     }
 
     pub fn spectate(&mut self, match_id: &str) -> StateMsg {
@@ -107,10 +107,16 @@ impl Connection {
     }
 
     pub fn recv_state(&mut self) -> StateMsg {
-        return recv_loop!(self, Ok(LitamaMessage::State(msg)) => msg)
+        return recv_loop!(self, Ok(LitamaMessage::State(msg)) => msg);
     }
 
-    pub fn make_move(&mut self, my_move: &Move, match_id: &str, token: &str, game: &Game) -> StateMsg {
+    pub fn make_move(
+        &mut self,
+        my_move: &Move,
+        match_id: &str,
+        token: &str,
+        game: &Game,
+    ) -> StateMsg {
         // send move
         while let Err(err) = self.send(&move_to_command(my_move, match_id, token, game)) {
             println!("Error while sending: {}", err)

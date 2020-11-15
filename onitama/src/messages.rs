@@ -109,11 +109,15 @@ pub fn parse_pos(pos: &str) -> Result<usize, String> {
 }
 
 pub fn move_to_command(my_move: &Move, match_id: &str, token: &str, game: &Game) -> String {
-    let pos = format!("{}{}", translate_pos(my_move.from as usize), translate_pos(my_move.to as usize));
+    let pos = format!(
+        "{}{}",
+        translate_pos(my_move.from as usize),
+        translate_pos(my_move.to as usize)
+    );
     let card = if my_move.used_left_card {
         &game.my.cards[0]
     } else {
         &game.my.cards[1]
     };
-    format!("move {} {} {} {}", match_id, token, pos, card.get_name())   
+    format!("move {} {} {} {}", match_id, token, pos, card.get_name())
 }

@@ -16,9 +16,9 @@ mod cli;
 mod color;
 mod connection;
 mod game;
+mod gui;
 mod messages;
 mod perft;
-mod gui;
 
 const SERVER: &str = "wss://litama.herokuapp.com";
 const HELP: &str = "Onitama Interface
@@ -36,13 +36,13 @@ Add the `-h` flag at the end if you want to play instead of the bot
 
 fn main() {
     match run() {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(err) => {
             println!("{}", HELP);
             if err.len() > 0 {
                 println!("\n{}", err);
             }
-        },
+        }
     }
 }
 

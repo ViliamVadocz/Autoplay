@@ -1,9 +1,9 @@
-use crate::SERVER;
-use crate::connection::{Connection, Participant};
-use crate::cli::{Args, Playing, GameHost};
-use crate::game::{Game, Move};
 use crate::bot::get_move;
+use crate::cli::{Args, GameHost, Playing};
 use crate::color::Color;
+use crate::connection::{Connection, Participant};
+use crate::game::{Game, Move};
+use crate::SERVER;
 use std::result::Result;
 
 pub fn run(args: Args) -> Result<(), String> {
@@ -26,7 +26,7 @@ pub fn run(args: Args) -> Result<(), String> {
                 };
                 game = game.take_turn(&the_move);
             }
-        },
+        }
         GameHost::Online(maybe_match_id, username) => {
             let mut conn = Connection::new(SERVER)?;
 
@@ -42,7 +42,7 @@ pub fn run(args: Args) -> Result<(), String> {
                         conn.join_match(&match_id, &username)
                     };
                     (match_id, p)
-                },
+                }
                 None => conn.create_match(&username),
             };
 
@@ -57,13 +57,12 @@ pub fn run(args: Args) -> Result<(), String> {
                         Playing::No => unreachable!(),
                     };
                     state_msg = conn.make_move(&my_move, &match_id, &p.token, &game);
-                }
-                else {
+                } else {
                     state_msg = conn.recv_state();
                 }
                 game = Game::from_state_msg(state_msg);
             }
-        },
+        }
     };
     Ok(())
 }
@@ -242,13 +241,11 @@ fn todo(g: &Game) -> Move {
 //     std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
 // }
 
-
 // const BOARD_SIZE: u32 = 640;
 // const SIDEBAR: u32 = 370;
 // const SQUARE_SIZE: u32 = BOARD_SIZE / 5;
 // const BACKGROUND_COLOR: Color = Color::RGB(20, 20, 20);
 // const CARD_SQUARE_SIZE: u32 = 20;
-    
 
 // fn get_pos_from_click(x: i32, y: i32) -> Option<u8> {
 //     let x = x as u32;
@@ -261,4 +258,3 @@ fn todo(g: &Game) -> Move {
 //         Some((row * 5 + col) as u8)
 //     }
 // }
-    

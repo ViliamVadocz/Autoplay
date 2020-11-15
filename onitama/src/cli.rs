@@ -1,9 +1,7 @@
-use crate::game::Game;
 use crate::cards::Card;
+use crate::game::Game;
 use std::env;
 use std::result::Result;
-
-
 
 pub type Args = (Playing, GameHost);
 
@@ -24,7 +22,9 @@ pub enum GameHost {
 pub fn parse_args() -> Result<Args, String> {
     let mut args = env::args().map(|s| s.to_lowercase());
     // ignore first argument
-    let _exe = args.next().ok_or_else(|| "How did you launch this without any arguments?".to_string())?;
+    let _exe = args
+        .next()
+        .ok_or_else(|| "How did you launch this without any arguments?".to_string())?;
 
     let online = match args.next().as_deref() {
         Some("online") => Ok(true),
@@ -47,7 +47,9 @@ pub fn parse_args() -> Result<Args, String> {
         // potentially get match id
         let match_id = if need_match_id {
             let a = args.next();
-            if a.is_none() { return Err("You need give a match id".to_string()); }
+            if a.is_none() {
+                return Err("You need give a match id".to_string());
+            }
             a
         } else {
             None
@@ -67,7 +69,6 @@ pub fn parse_args() -> Result<Args, String> {
         };
 
         Ok((playing, GameHost::Online(match_id, username)))
-    
     } else {
         // find out if I want to use preset cards or random
         let preset = match second.as_deref() {
@@ -80,7 +81,11 @@ pub fn parse_args() -> Result<Args, String> {
         let game = if preset {
             let mut cards = Vec::new();
             for i in 0..5 {
-                cards.push(Card::from_text(&args.next().ok_or_else(|| format!("Expected 5 cards, got {}", i))?)?)
+                cards.push(Card::from_text(
+                    &args
+                        .next()
+                        .ok_or_else(|| format!("Expected 5 cards, got {}", i))?,
+                )?)
             }
             Game::from_cards(cards)
         } else {
@@ -88,7 +93,11 @@ pub fn parse_args() -> Result<Args, String> {
             Game::new()
         };
         // find out if human is playing
-        let playing = if is_human(args.next())? {Playing::Human} else {Playing::Bot};
+        let playing = if is_human(args.next())? {
+            Playing::Human
+        } else {
+            Playing::Bot
+        };
 
         Ok((playing, GameHost::Local(game)))
     }
@@ -98,6 +107,6 @@ fn is_human(hb: Option<String>) -> Result<bool, String> {
     match hb.as_deref() {
         Some("-h") => Ok(true),
         Some(word) => Err(format!("Unrecognised word: {}", word)),
-        None => Ok(false)
+        None => Ok(false),
     }
 }
