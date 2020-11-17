@@ -1,22 +1,56 @@
 use crate::bot::get_move;
 use crate::cli::{Args, GameHost, Playing};
-use crate::color::Color;
+use crate::color::Color as GameColor;
 use crate::connection::{Connection, Participant};
 use crate::game::{Game, Move};
+use crate::cards::Card;
 use crate::SERVER;
+
 use std::result::Result;
+use std::thread;
+use std::sync::mpsc::{channel, Sender, Receiver};
+use std::time::Duration;
+
+use sdl2::event::Event;
+use sdl2::image::LoadTexture;
+use sdl2::keyboard::Keycode;
+use sdl2::mouse::MouseButton;
+use sdl2::pixels::Color;
+use sdl2::rect::Rect;
+use sdl2::render::{TextureQuery, WindowCanvas};
+
+use bitwise::TestBit;
+
+enum Transmission {
+    Display(Game),
+    RequestMove,
+}
 
 pub fn run(args: Args) -> Result<(), String> {
-    // TODO launch a second thread with gui
+    let (tx_gui, rx_game) = channel();
+    let (tx_game, rx_gui) = channel();
+    // TODO also shut off original thread if gui thread is gone
+    thread::spawn(move || gui(tx_gui, rx_gui).unwrap(/* TODO */));
+
+    // helper closures
+    let display = |game: &Game| {
+        tx_game.send(Transmission::Display(game.clone())).map_err(|e| e.to_string())
+    };
+    let get_move_from_gui = || {
+        tx_game.send(Transmission::RequestMove).map_err(|e| e.to_string())?;
+        rx_game.recv().map_err(|e| e.to_string())
+    };
+
     let (playing, host) = args;
     match host {
         GameHost::Local(mut game) => {
-            let my_color = Color::Red; // TODO pick randomly
+            let my_color = GameColor::Red; // TODO pick randomly
             while game.in_progress {
+                display(&game)?;
                 let the_move = if my_color == game.color {
                     // my turn
                     match playing {
-                        Playing::Human => todo(&game), // TODO get move from second thread
+                        Playing::Human => get_move_from_gui()?,
                         Playing::Bot => get_move(&game),
                         Playing::No => unreachable!(),
                     }
@@ -36,7 +70,7 @@ pub fn run(args: Args) -> Result<(), String> {
                         // fake participant
                         Participant {
                             token: String::new(),
-                            color: Color::Red,
+                            index: 0,
                         }
                     } else {
                         conn.join_match(&match_id, &username)
@@ -45,14 +79,18 @@ pub fn run(args: Args) -> Result<(), String> {
                 }
                 None => conn.create_match(&username),
             };
+            println!("match id: {}", match_id);
+            // println!("join: https://git.io/onitama#{}", match_id);
+            // println!("spectate: https://git.io/onitama#spectate-{}", match_id);
 
             let mut state_msg = conn.spectate(&match_id);
+            let color = if p.index == state_msg.indices.red {GameColor::Red} else {GameColor::Blue};
             let mut game = Game::from_state_msg(state_msg);
             while game.in_progress {
-                // TODO display game
-                if p.color == game.color && !matches!(playing, Playing::No) {
+                display(&game)?;
+                if color == game.color && !matches!(playing, Playing::No) {
                     let my_move = match playing {
-                        Playing::Human => todo(&game), // TODO get move from second thread
+                        Playing::Human => get_move_from_gui()?,
                         Playing::Bot => get_move(&game),
                         Playing::No => unreachable!(),
                     };
@@ -67,194 +105,170 @@ pub fn run(args: Args) -> Result<(), String> {
     Ok(())
 }
 
-// placeholder function for communicating with gui to get user input
-fn todo(g: &Game) -> Move {
-    g.gen_moves().pop().unwrap()
+// sizes
+const BLOCK: u32 = 64;
+const WIN_WIDTH: u32 = 19 * BLOCK;
+const WIN_HEIGHT: u32 = 12 * BLOCK;
+const BOARD_PAD: u32 = 1 * BLOCK;
+const BOARD_SQUARE: u32 = 2 * BLOCK;
+const BOARD_SIZE: u32 = 5 * BOARD_SQUARE;
+const CARD_PAD: u32 = 1 * BLOCK;
+const CARD_SQUARE: u32 = BLOCK / 2;
+
+// colour
+const BG_COLOR: Color = Color::RGB(20, 20, 20);
+const W_SQUARE_COLOR: Color = Color::RGB(205, 200, 190);
+const B_SQUARE_COLOR: Color = Color::RGB(180, 180, 170);
+const SELECT_COLOR: Color = Color::RGB(100, 200, 100);
+
+macro_rules! rect {
+    ($x:expr, $y:expr, $width:expr, $height:expr) => {Rect::new($x as i32, $y as i32, $width as u32, $height as u32)};
 }
 
-// WIP GUI CODE BELOW
+fn gui(tx: Sender<Move>, rx: Receiver<Transmission>) -> Result<(), String> {
+    let sdl_context = sdl2::init()?;
+    let video_subsystem = sdl_context.video()?;
+    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
 
-// use sdl2::event::Event;
-// use sdl2::image::LoadTexture;
-// use sdl2::keyboard::Keycode;
-// use sdl2::mouse::MouseButton;
-// use sdl2::pixels::Color;
-// use sdl2::rect::Rect;
-// use sdl2::render::{TextureQuery, WindowCanvas};
+    let window = video_subsystem
+        .window("Onitama", WIN_WIDTH, WIN_HEIGHT)
+        .position_centered()
+        .opengl()
+        .build()
+        .map_err(|e| e.to_string())?;
 
-// use std::time::Duration;
+    let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
 
-// use bitwise::TestBit;
+    let texture_creator = canvas.texture_creator();
+    
+    // load piece images
+    let red_pawn = texture_creator.load_texture("./images/red_pawn.png")?;
+    let red_king = texture_creator.load_texture("./images/red_king.png")?;
+    let blue_pawn = texture_creator.load_texture("./images/blue_pawn.png")?;
+    let blue_king = texture_creator.load_texture("./images/blue_king.png")?;
+    // load temple and colour it (original image is white)
+    let mut temple = texture_creator.load_texture("./images/temple.png")?;
+    temple.set_color_mod(W_SQUARE_COLOR.r, W_SQUARE_COLOR.g, W_SQUARE_COLOR.b);
+    // load font
+    let font = ttf_context.load_font("./fonts/maturasc.ttf", 20)?;
 
-// let sdl_context = sdl2::init()?;
-// let video_subsystem = sdl_context.video()?;
-// let ttf_context = sdl2::ttf::init()?;
+        // let surface = font.render(card.get_name()).blended(Color::RED)?;
+        // let texture = texture_creator.create_texture_from_surface(&surface)?;
+        // let TextureQuery { width, height, .. } = texture.query();
 
-// let window = video_subsystem
-//     .window("Onitama", BOARD_SIZE + SIDEBAR, BOARD_SIZE)
-//     .position_centered()
-//     .opengl()
-//     .build()?;
+        // canvas.fill_rect(rect)?;
+        // canvas.set_draw_color(Color::BLACK);
+        // canvas.draw_rect(rect)?;
 
-// let mut canvas = window.into_canvas().build()?;
 
-// let texture_creator = canvas.texture_creator();
 
-// // load piece images
-// let red_pawn = texture_creator.load_texture("./images/red_pawn.png")?;
-// let red_king = texture_creator.load_texture("./images/red_king.png")?;
-// let blue_pawn = texture_creator.load_texture("./images/blue_pawn.png")?;
-// let blue_king = texture_creator.load_texture("./images/blue_king.png")?;
+    let mut event_pump = sdl_context.event_pump()?;
+    let mut clicked_square = None;
+    let mut game = None;
+    let mut want_move = false;
+    'main_loop: loop {
+        // event loop
+        for event in event_pump.poll_iter() {
+            match event {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => {
+                    break 'main_loop;
+                }
+                Event::MouseButtonDown {
+                    mouse_btn: MouseButton::Left,
+                    x,
+                    y,
+                    ..
+                } => {
+                    clicked_square = get_pos_from_click(x as u32, y as u32);
+                }
+                // TODO right click to highlight
+                // TODO F to flip view
+                _ => {}
+            }
+        }
 
-// let font = ttf_context.load_font("./fonts/arial.ttf", 20)?;
-// let draw_card = |canvas: &mut WindowCanvas, x, y, card: &Card, right_side_up| -> Result<()> {
-//     let surface = font.render(card.get_name()).blended(Color::RED)?;
-//     let texture = texture_creator.create_texture_from_surface(&surface)?;
-//     let TextureQuery { width, height, .. } = texture.query();
-//     if right_side_up {
-//         canvas.copy(
-//             &texture,
-//             None,
-//             Some(Rect::new(
-//                 x,
-//                 y,
-//                 width,
-//                 height,
-//             )),
-//         )?;
-//     } else {
-//         canvas.copy_ex(&texture, None, Some(Rect::new(
-//             x + 100 - width as i32,
-//             y + 100,
-//             width,
-//             height,
-//         )
-//         ), 0.0, None, true, true)?;
-//     }
+        // see if game can be updated
+        let attempted_recv = rx.try_recv();
+        if attempted_recv.is_ok() {
+            match attempted_recv.unwrap() {
+                Transmission::Display(g) => {game = Some(g)},
+                Transmission::RequestMove => {want_move = true},
 
-//     // display move
-//     let pad = if right_side_up { height as i32 } else { 0 };
-//     let pieces = if right_side_up {
-//         card.get_red()
-//     } else {
-//         card.get_blue()
-//     };
-//     for i in 0..25 {
-//         let row = i / 5;
-//         let col = i % 5;
-//         canvas.set_draw_color(if pieces.test_bit(i as u32) {
-//             Color::BLACK
-//         } else {
-//             Color::WHITE
-//         });
-//         let rect = Rect::new(
-//             x + col * CARD_SQUARE_SIZE as i32,
-//             pad + y + row * CARD_SQUARE_SIZE as i32,
-//             CARD_SQUARE_SIZE,
-//             CARD_SQUARE_SIZE,
-//         );
-//         canvas.fill_rect(rect)?;
-//         canvas.set_draw_color(Color::BLACK);
-//         canvas.draw_rect(rect)?;
-//     }
+            }
+        }
 
-//     Ok(())
-// };
+        // clear everything
+        canvas.set_draw_color(BG_COLOR);
+        canvas.clear();
 
-// canvas.set_draw_color(BACKGROUND_COLOR);
-// canvas.clear();
-// canvas.present();
+        // draw chequerboard
+        match game {
+            Some(ref actual_game) => {
+                let (red, blue) = actual_game.get_red_blue();
+                for pos in 0..25u8 {
+                    let row = pos as u32 / 5;
+                    let col = pos as u32 % 5;
+                    let x = BOARD_PAD + BOARD_SQUARE * col;
+                    let y = BOARD_PAD + BOARD_SQUARE * row;
+                    let square = rect!(x, y, BOARD_SQUARE, BOARD_SQUARE);
+                    canvas.set_draw_color(if clicked_square.is_some() && clicked_square.unwrap() == pos as u32 {SELECT_COLOR} else if pos % 2 == 0 {B_SQUARE_COLOR} else {W_SQUARE_COLOR});
+                    canvas.fill_rect(square)?;
+                    // add image (such as pieces or temple)
+                    if red.pieces.test_bit(pos) {
+                        if red.king == pos {
+                            canvas.copy(&red_king, None, Some(square))?;
+                        } else {
+                            canvas.copy(&red_pawn, None, Some(square))?;
+                        }
+                    } else if blue.pieces.test_bit(pos) {
+                        if blue.king == pos {
+                            canvas.copy(&blue_king, None, Some(square))?;
+                        } else {
+                            canvas.copy(&blue_pawn, None, Some(square))?;
+                        }
+                    } else if pos == 2 || pos == 22 {
+                        canvas.copy(&temple, None, Some(square))?;
+                    }
+                }
+            }
+            None => {
+                // empty chequerboard while no game
+                for pos in 0..25 {
+                    let row = pos / 5;
+                    let col = pos % 5;
+                    let x = BOARD_PAD + BOARD_SQUARE * col;
+                    let y = BOARD_PAD + BOARD_SQUARE * row;
+                    let square = rect!(x, y, BOARD_SQUARE, BOARD_SQUARE);
+                    canvas.set_draw_color(if clicked_square.is_some() && clicked_square.unwrap() == pos {SELECT_COLOR} else if pos % 2 == 0 {B_SQUARE_COLOR} else {W_SQUARE_COLOR});
+                    canvas.fill_rect(square)?;
+                    if pos == 2 || pos == 22 {
+                        canvas.copy(&temple, None, Some(square))?;
+                    }
+                }
+            }
+        }
 
-// let mut game = game::Game::new();
-// draw_card(&mut canvas, 700, 50, &game.red.cards[0], false)?;
-// draw_card(&mut canvas, 850, 50, &game.red.cards[1], false)?;
-// draw_card(&mut canvas, 700, 458, &game.blue.cards[0], true)?;
-// draw_card(&mut canvas, 850, 458, &game.blue.cards[1], true)?;
-// draw_card(&mut canvas, 750, 254, &game.table_card, false)?;
+        // TODO cards
+        // TODO usernames
 
-// let mut event_pump = sdl_context.event_pump()?;
-// let mut clicked_square = None;
-// 'main_loop: loop {
-//     for event in event_pump.poll_iter() {
-//         match event {
-//             Event::Quit { .. }
-//             | Event::KeyDown {
-//                 keycode: Some(Keycode::Escape),
-//                 ..
-//             } => {
-//                 break 'main_loop;
-//             }
-//             Event::MouseButtonDown {
-//                 mouse_btn: MouseButton::Left,
-//                 x,
-//                 y,
-//                 ..
-//             } => {
-//                 clicked_square = get_pos_from_click(x, y);
-//             }
-//             _ => {}
-//         }
-//     }
+        canvas.present();
+        // 60 fps POG
+        std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+    }
 
-//     // draw chequerboard
-//     for i in 0..25u8 {
-//         let row = i / 5;
-//         let col = i % 5;
-//         let color = if clicked_square.is_some() && i == clicked_square.unwrap() {
-//             Color::RGB(100, 200, 100)
-//         } else if i % 2 == 0 {
-//             Color::RGB(205, 200, 190)
-//         } else {
-//             Color::RGB(180, 180, 170)
-//         };
-//         let square = Rect::new(
-//             (col as u32 * SQUARE_SIZE) as i32,
-//             (row as u32 * SQUARE_SIZE) as i32,
-//             SQUARE_SIZE,
-//             SQUARE_SIZE,
-//         );
-//         canvas.set_draw_color(color);
-//         canvas.fill_rect(square)?;
+    Ok(())
+}
 
-//         // canvas.draw_rect(square)?;
-//         let piece = if game.red.pieces.test_bit(i) {
-//             if i == game.red.king {
-//                 Some(&red_king)
-//             } else {
-//                 Some(&red_pawn)
-//             }
-//         } else if game.blue.pieces.test_bit(i) {
-//             if i == game.blue.king {
-//                 Some(&blue_king)
-//             } else {
-//                 Some(&blue_pawn)
-//             }
-//         } else {
-//             None
-//         };
-//         if let Some(texture) = piece {
-//             canvas.copy(texture, None, Some(square))?;
-//         }
-//     }
-
-//     canvas.present();
-//     std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
-// }
-
-// const BOARD_SIZE: u32 = 640;
-// const SIDEBAR: u32 = 370;
-// const SQUARE_SIZE: u32 = BOARD_SIZE / 5;
-// const BACKGROUND_COLOR: Color = Color::RGB(20, 20, 20);
-// const CARD_SQUARE_SIZE: u32 = 20;
-
-// fn get_pos_from_click(x: i32, y: i32) -> Option<u8> {
-//     let x = x as u32;
-//     let y = y as u32;
-//     if x > BOARD_SIZE {
-//         None
-//     } else {
-//         let row = y / SQUARE_SIZE;
-//         let col = x / SQUARE_SIZE;
-//         Some((row * 5 + col) as u8)
-//     }
-// }
+fn get_pos_from_click(x: u32, y: u32) -> Option<u32> {
+    if (BOARD_PAD <= x && x < BOARD_PAD + BOARD_SIZE) && (BOARD_PAD <= y && y < BOARD_PAD + BOARD_SIZE) {
+        let col = (x - BOARD_PAD) / BOARD_SQUARE;
+        let row = (y - BOARD_PAD) / BOARD_SQUARE;
+        Some(row * 5 + col)
+    } else {
+        None
+    }
+}

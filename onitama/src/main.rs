@@ -5,7 +5,7 @@ extern crate rand;
 extern crate test;
 extern crate typenum;
 extern crate websocket;
-// extern crate sdl2;
+extern crate sdl2;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
@@ -32,7 +32,9 @@ Commands:
 - online spectate [match id]        :   spectate an online game
 
 Add the `-h` flag at the end if you want to play instead of the bot
-(cards should be separated by spaces)";
+
+When using preset cards they be separated by spaces and in this order:
+    [red1] [red2] [blue1] [blue2] [side]";
 
 fn main() {
     match run() {
