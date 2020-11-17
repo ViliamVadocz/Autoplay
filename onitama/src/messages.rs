@@ -23,7 +23,7 @@ pub enum LitamaMessage {
 pub struct CreateMsg {
     pub match_id: String,
     pub token: String,
-    pub color: String,
+    pub index: u8,
 }
 
 #[derive(Debug, Deserialize)]
@@ -31,12 +31,14 @@ pub struct CreateMsg {
 pub struct JoinMsg {
     pub match_id: String,
     pub token: String,
-    pub color: String,
+    pub index: u8,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StateMsg {
+    pub usernames: UsernamesObj,
+    pub indices: IndicesObj,
     pub match_id: String,
     pub current_turn: String,
     pub cards: CardsObj,
@@ -45,6 +47,20 @@ pub struct StateMsg {
     pub board: String,
     pub game_state: String,
     pub winner: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UsernamesObj {
+    pub red: String,
+    pub blue: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IndicesObj {
+    pub red: u8,
+    pub blue: u8,
 }
 
 #[derive(Debug, Deserialize)]

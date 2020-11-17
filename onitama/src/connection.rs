@@ -1,4 +1,3 @@
-use crate::color::Color;
 use crate::game::{Game, Move};
 use crate::messages::*;
 use std::marker::Send;
@@ -22,7 +21,7 @@ macro_rules! recv_loop {
 
 pub struct Participant {
     pub token: String,
-    pub color: Color,
+    pub index: u8,
 }
 
 pub struct Connection {
@@ -76,7 +75,7 @@ impl Connection {
                 msg.match_id,
                 Participant {
                     token: msg.token,
-                    color: Color::from(msg.color).unwrap(),
+                    index: msg.index,
                 },
             )
         );
@@ -91,7 +90,7 @@ impl Connection {
             self,
             Ok(LitamaMessage::Join(msg)) => Participant {
                 token: msg.token,
-                color: Color::from(msg.color).unwrap(),
+                index: msg.index,
             }
         );
     }
