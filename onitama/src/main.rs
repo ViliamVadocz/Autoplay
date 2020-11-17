@@ -2,10 +2,10 @@
 extern crate arrayvec;
 extern crate bitwise;
 extern crate rand;
+extern crate sdl2;
 extern crate test;
 extern crate typenum;
 extern crate websocket;
-extern crate sdl2;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
@@ -41,7 +41,7 @@ fn main() {
         Ok(_) => {}
         Err(err) => {
             println!("{}", HELP);
-            if err.len() > 0 {
+            if !err.is_empty() {
                 println!("\n{}", err);
             }
         }

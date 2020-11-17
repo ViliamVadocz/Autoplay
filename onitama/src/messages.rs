@@ -9,7 +9,7 @@ pub enum LitamaMessage {
     #[serde(rename = "join")]
     Join(JoinMsg),
     #[serde(rename = "state")]
-    State(StateMsg),
+    State(Box<StateMsg>),
     #[serde(rename = "move")]
     Move(MoveMsg),
     #[serde(rename = "spectate")]

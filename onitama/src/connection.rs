@@ -106,18 +106,12 @@ impl Connection {
     }
 
     pub fn recv_state(&mut self) -> StateMsg {
-        return recv_loop!(self, Ok(LitamaMessage::State(msg)) => msg);
+        return recv_loop!(self, Ok(LitamaMessage::State(msg)) => *msg);
     }
 
-    pub fn make_move(
-        &mut self,
-        my_move: &Move,
-        match_id: &str,
-        token: &str,
-        game: &Game,
-    ) -> StateMsg {
+    pub fn make_move(&mut self, m: &Move, match_id: &str, token: &str, game: &Game) -> StateMsg {
         // send move
-        while let Err(err) = self.send(&move_to_command(my_move, match_id, token, game)) {
+        while let Err(err) = self.send(&move_to_command(m, match_id, token, game)) {
             println!("Error while sending: {}", err)
         }
         // confirm move
