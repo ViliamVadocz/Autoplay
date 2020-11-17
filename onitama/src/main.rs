@@ -48,7 +48,106 @@ fn main() {
     }
 }
 
+use std::sync::mpsc::channel;
+use std::thread;
+
+use crate::bot::get_move;
+use crate::cli::{GameHost, Playing};
+use crate::color::Color as GameColor;
+use crate::connection::{Connection, Participant};
+use crate::game::Game;
+
+pub enum Transmission {
+    Display(Game),
+    RequestMove,
+}
+
 fn run() -> Result<(), String> {
     let args = cli::parse_args()?;
-    gui::run(args)
+
+    let (tx_gui, rx_game) = channel();
+    let (tx_game, rx_gui) = channel();
+    // TODO also shut off original thread if gui thread is gone
+    // TODO no-gui option
+    thread::spawn(move || gui::run(tx_gui, rx_gui).unwrap(/* TODO */));
+
+    // helper closures
+    let display = |game: &Game| {
+        tx_game
+            .send(Transmission::Display(game.clone()))
+            .map_err(|e| e.to_string())
+    };
+    let get_move_from_gui = || {
+        tx_game
+            .send(Transmission::RequestMove)
+            .map_err(|e| e.to_string())?;
+        rx_game.recv().map_err(|e| e.to_string())
+    };
+
+    let (playing, host) = args;
+    match host {
+        GameHost::Local(mut game) => {
+            let my_color = GameColor::Red; // TODO pick randomly
+            while game.in_progress {
+                display(&game)?;
+                let the_move = if my_color == game.color {
+                    // my turn
+                    match playing {
+                        Playing::Human => get_move_from_gui()?,
+                        Playing::Bot => get_move(&game),
+                        Playing::No => unreachable!(),
+                    }
+                } else {
+                    // otherwise bot plays
+                    get_move(&game)
+                };
+                game = game.take_turn(&the_move);
+            }
+        }
+        GameHost::Online(maybe_match_id, username) => {
+            let mut conn = Connection::new(SERVER)?;
+
+            let (match_id, p) = match maybe_match_id {
+                Some(match_id) => {
+                    let p = if matches!(playing, Playing::No) {
+                        // fake participant
+                        Participant {
+                            token: String::new(),
+                            index: 0,
+                        }
+                    } else {
+                        conn.join_match(&match_id, &username)
+                    };
+                    (match_id, p)
+                }
+                None => conn.create_match(&username),
+            };
+            println!("match id: {}", match_id);
+            // println!("join: https://git.io/onitama#{}", match_id);
+            // println!("spectate: https://git.io/onitama#spectate-{}", match_id);
+
+            let mut state_msg = conn.spectate(&match_id);
+            let color = if p.index == state_msg.indices.red {
+                GameColor::Red
+            } else {
+                GameColor::Blue
+            };
+            let mut game = Game::from_state_msg(state_msg);
+            while game.in_progress {
+                display(&game)?;
+                if color == game.color && !matches!(playing, Playing::No) {
+                    let my_move = match playing {
+                        Playing::Human => get_move_from_gui()?,
+                        Playing::Bot => get_move(&game),
+                        Playing::No => unreachable!(),
+                    };
+                    state_msg = conn.make_move(&my_move, &match_id, &p.token, &game);
+                } else {
+                    state_msg = conn.recv_state();
+                }
+                game = Game::from_state_msg(state_msg);
+            }
+        }
+    };
+    Ok(())
 }

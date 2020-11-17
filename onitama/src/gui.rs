@@ -1,14 +1,9 @@
-use crate::bot::get_move;
 use crate::cards::Card;
-use crate::cli::{Args, GameHost, Playing};
-use crate::color::Color as GameColor;
-use crate::connection::{Connection, Participant};
-use crate::game::{Game, Move};
-use crate::SERVER;
+use crate::game::Move;
+use crate::Transmission;
 
 use std::result::Result;
-use std::sync::mpsc::{channel, Receiver, Sender};
-use std::thread;
+use std::sync::mpsc::{Receiver, Sender};
 use std::time::Duration;
 
 use sdl2::event::Event;
@@ -20,98 +15,6 @@ use sdl2::rect::Rect;
 use sdl2::render::{TextureQuery, WindowCanvas};
 
 use bitwise::TestBit;
-
-enum Transmission {
-    Display(Game),
-    RequestMove,
-}
-
-pub fn run(args: Args) -> Result<(), String> {
-    let (tx_gui, rx_game) = channel();
-    let (tx_game, rx_gui) = channel();
-    // TODO also shut off original thread if gui thread is gone
-    thread::spawn(move || gui(tx_gui, rx_gui).unwrap(/* TODO */));
-
-    // helper closures
-    let display = |game: &Game| {
-        tx_game
-            .send(Transmission::Display(game.clone()))
-            .map_err(|e| e.to_string())
-    };
-    let get_move_from_gui = || {
-        tx_game
-            .send(Transmission::RequestMove)
-            .map_err(|e| e.to_string())?;
-        rx_game.recv().map_err(|e| e.to_string())
-    };
-
-    let (playing, host) = args;
-    match host {
-        GameHost::Local(mut game) => {
-            let my_color = GameColor::Red; // TODO pick randomly
-            while game.in_progress {
-                display(&game)?;
-                let the_move = if my_color == game.color {
-                    // my turn
-                    match playing {
-                        Playing::Human => get_move_from_gui()?,
-                        Playing::Bot => get_move(&game),
-                        Playing::No => unreachable!(),
-                    }
-                } else {
-                    // otherwise bot plays
-                    get_move(&game)
-                };
-                game = game.take_turn(&the_move);
-            }
-        }
-        GameHost::Online(maybe_match_id, username) => {
-            let mut conn = Connection::new(SERVER)?;
-
-            let (match_id, p) = match maybe_match_id {
-                Some(match_id) => {
-                    let p = if matches!(playing, Playing::No) {
-                        // fake participant
-                        Participant {
-                            token: String::new(),
-                            index: 0,
-                        }
-                    } else {
-                        conn.join_match(&match_id, &username)
-                    };
-                    (match_id, p)
-                }
-                None => conn.create_match(&username),
-            };
-            println!("match id: {}", match_id);
-            // println!("join: https://git.io/onitama#{}", match_id);
-            // println!("spectate: https://git.io/onitama#spectate-{}", match_id);
-
-            let mut state_msg = conn.spectate(&match_id);
-            let color = if p.index == state_msg.indices.red {
-                GameColor::Red
-            } else {
-                GameColor::Blue
-            };
-            let mut game = Game::from_state_msg(state_msg);
-            while game.in_progress {
-                display(&game)?;
-                if color == game.color && !matches!(playing, Playing::No) {
-                    let my_move = match playing {
-                        Playing::Human => get_move_from_gui()?,
-                        Playing::Bot => get_move(&game),
-                        Playing::No => unreachable!(),
-                    };
-                    state_msg = conn.make_move(&my_move, &match_id, &p.token, &game);
-                } else {
-                    state_msg = conn.recv_state();
-                }
-                game = Game::from_state_msg(state_msg);
-            }
-        }
-    };
-    Ok(())
-}
 
 // sizes
 const BLOCK: u32 = 64;
@@ -135,7 +38,7 @@ macro_rules! rect {
     };
 }
 
-fn gui(tx: Sender<Move>, rx: Receiver<Transmission>) -> Result<(), String> {
+pub fn run(tx: Sender<Move>, rx: Receiver<Transmission>) -> Result<(), String> {
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
     let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
@@ -200,9 +103,8 @@ fn gui(tx: Sender<Move>, rx: Receiver<Transmission>) -> Result<(), String> {
         }
 
         // see if game can be updated
-        let attempted_recv = rx.try_recv();
-        if attempted_recv.is_ok() {
-            match attempted_recv.unwrap() {
+        if let Ok(trans) = rx.try_recv() {
+            match trans {
                 Transmission::Display(g) => game = Some(g),
                 Transmission::RequestMove => want_move = true,
             }
