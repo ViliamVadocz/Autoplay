@@ -3,7 +3,9 @@ use crate::game::Move;
 use crate::Transmission;
 
 use std::result::Result;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
+use std::sync::Arc;
 use std::time::Duration;
 
 use sdl2::event::Event;
@@ -28,9 +30,9 @@ const CARD_SQUARE: u32 = BLOCK / 2;
 
 // colour
 const BG_COLOR: Color = Color::RGB(20, 20, 20);
-const W_SQUARE_COLOR: Color = Color::RGB(205, 200, 190);
-const B_SQUARE_COLOR: Color = Color::RGB(180, 180, 170);
-const SELECT_COLOR: Color = Color::RGB(100, 200, 100);
+const W_SQUARE_COLOR: Color = Color::RGB(239, 218, 182);
+const B_SQUARE_COLOR: Color = Color::RGB(179, 137, 101);
+const SELECT_COLOR: Color = Color::RGB(90, 150, 60);
 
 macro_rules! rect {
     ($x:expr, $y:expr, $width:expr, $height:expr) => {
@@ -38,7 +40,11 @@ macro_rules! rect {
     };
 }
 
-pub fn run(tx: Sender<Move>, rx: Receiver<Transmission>) -> Result<(), String> {
+pub fn run(
+    tx: Sender<Move>,
+    rx: Receiver<Transmission>,
+    should_end: &Arc<AtomicBool>,
+) -> Result<(), String> {
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
     let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
@@ -78,6 +84,10 @@ pub fn run(tx: Sender<Move>, rx: Receiver<Transmission>) -> Result<(), String> {
     let mut game = None;
     let mut want_move = false;
     'main_loop: loop {
+        if should_end.load(Ordering::Relaxed) {
+            break;
+        }
+
         // event loop
         for event in event_pump.poll_iter() {
             match event {
@@ -181,7 +191,6 @@ pub fn run(tx: Sender<Move>, rx: Receiver<Transmission>) -> Result<(), String> {
         // TODO usernames
 
         canvas.present();
-        // 60 fps POG
         std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
 

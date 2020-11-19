@@ -48,14 +48,17 @@ fn main() {
     }
 }
 
-use std::sync::mpsc::channel;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::Arc;
 use std::thread;
 
 use crate::bot::get_move;
+use crate::cli::Args;
 use crate::cli::{GameHost, Playing};
 use crate::color::Color as GameColor;
 use crate::connection::{Connection, Participant};
-use crate::game::Game;
+use crate::game::{Game, Move};
 
 pub enum Transmission {
     Display(Game),
@@ -65,12 +68,51 @@ pub enum Transmission {
 fn run() -> Result<(), String> {
     let args = cli::parse_args()?;
 
+    // track whether the program should exit
+    let should_end = Arc::new(AtomicBool::new(false));
+
+    // communication between game and gui
     let (tx_gui, rx_game) = channel();
     let (tx_game, rx_gui) = channel();
-    // TODO also shut off original thread if gui thread is gone
-    // TODO no-gui option
-    thread::spawn(move || gui::run(tx_gui, rx_gui).unwrap(/* TODO */));
 
+    // TODO no-gui option
+    let gui_should_end = Arc::clone(&should_end);
+    let gui_thread = thread::spawn(move || {
+        let res = gui::run(tx_gui, rx_gui, &gui_should_end);
+        gui_should_end.store(true, Ordering::Relaxed);
+        res
+    });
+
+    let game_should_end = Arc::clone(&should_end);
+    let game_thread = thread::spawn(move || {
+        let res = run_game(tx_game, rx_game, args, &game_should_end);
+        if res.is_err() {
+            game_should_end.store(true, Ordering::Relaxed);
+        }
+        res
+    });
+
+    loop {
+        if should_end.load(Ordering::Relaxed) {
+            let gui_res = gui_thread.join().unwrap();
+            let game_res = game_thread.join().unwrap();
+            return match &gui_res {
+                Ok(_) => game_res,
+                Err(gui_err) => match &game_res {
+                    Ok(_) => gui_res,
+                    Err(game_err) => Err(format!("{}\n{}", gui_err, game_err)),
+                },
+            };
+        }
+    }
+}
+
+fn run_game(
+    tx_game: Sender<Transmission>,
+    rx_game: Receiver<Move>,
+    args: Args,
+    should_end: &Arc<AtomicBool>,
+) -> Result<(), String> {
     // helper closures
     let display = |game: &Game| {
         tx_game
@@ -103,6 +145,7 @@ fn run() -> Result<(), String> {
                 };
                 game = game.take_turn(&the_move);
             }
+            display(&game)?;
         }
         GameHost::Online(maybe_match_id, username) => {
             let mut conn = Connection::new(SERVER)?;
@@ -134,6 +177,9 @@ fn run() -> Result<(), String> {
             };
             let mut game = Game::from_state_msg(state_msg);
             while game.in_progress {
+                if should_end.load(Ordering::Relaxed) {
+                    break;
+                }
                 display(&game)?;
                 if color == game.color && !matches!(playing, Playing::No) {
                     let my_move = match playing {
@@ -147,6 +193,7 @@ fn run() -> Result<(), String> {
                 }
                 game = Game::from_state_msg(state_msg);
             }
+            display(&game)?;
         }
     };
     Ok(())
