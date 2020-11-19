@@ -12,13 +12,13 @@ const CHECK_WEIGHT: i64 = 10;
 // positive is good for me, negative is good for other
 pub fn game_eval(g: &Game) -> i64 {
     let mut my_control = 0u32;
-    let my_card = g.my.cards[0].get_move(g.color) | g.my.cards[1].get_move(g.color);
+    let my_card = g.my.cards[0].get_move(g.colour) | g.my.cards[1].get_move(g.colour);
     for pos in BitIter(g.my.pieces) {
         my_control |= shift_bitmap(my_card, pos);
     }
     let mut other_control = 0u32;
     let other_card =
-        g.other.cards[0].get_move(g.color.next()) | g.other.cards[1].get_move(g.color.next());
+        g.other.cards[0].get_move(g.colour.next()) | g.other.cards[1].get_move(g.colour.next());
     for pos in BitIter(g.other.pieces) {
         other_control |= shift_bitmap(other_card, pos);
     }

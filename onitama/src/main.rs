@@ -13,7 +13,7 @@ mod macros;
 mod bot;
 mod cards;
 mod cli;
-mod color;
+mod colour;
 mod connection;
 mod game;
 mod gui;
@@ -56,7 +56,7 @@ use std::thread;
 use crate::bot::get_move;
 use crate::cli::Args;
 use crate::cli::{GameHost, Playing};
-use crate::color::Color as GameColor;
+use crate::colour::Colour as GameColour;
 use crate::connection::{Connection, Participant};
 use crate::game::{Game, Move};
 
@@ -129,10 +129,10 @@ fn run_game(
     let (playing, host) = args;
     match host {
         GameHost::Local(mut game) => {
-            let my_color = GameColor::Red; // TODO pick randomly
+            let my_colour = GameColour::Red; // TODO pick randomly
             while game.in_progress {
                 display(&game)?;
-                let the_move = if my_color == game.color {
+                let the_move = if my_colour == game.colour {
                     // my turn
                     match playing {
                         Playing::Human => get_move_from_gui()?,
@@ -170,10 +170,10 @@ fn run_game(
             // println!("spectate: https://git.io/onitama#spectate-{}", match_id);
 
             let mut state_msg = conn.spectate(&match_id);
-            let color = if p.index == state_msg.indices.red {
-                GameColor::Red
+            let colour = if p.index == state_msg.indices.red {
+                GameColour::Red
             } else {
-                GameColor::Blue
+                GameColour::Blue
             };
             let mut game = Game::from_state_msg(state_msg);
             while game.in_progress {
@@ -181,7 +181,7 @@ fn run_game(
                     break;
                 }
                 display(&game)?;
-                if color == game.color && !matches!(playing, Playing::No) {
+                if colour == game.colour && !matches!(playing, Playing::No) {
                     let my_move = match playing {
                         Playing::Human => get_move_from_gui()?,
                         Playing::Bot => get_move(&game),

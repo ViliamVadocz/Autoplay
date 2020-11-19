@@ -2,7 +2,7 @@ use arrayvec::ArrayVec;
 use bitwise::{ClearBit, SetBit, TestBit};
 
 use crate::cards::{draw_cards, shift_bitmap, BitIter, Card};
-use crate::color::Color;
+use crate::colour::Colour;
 use crate::messages::*;
 use std::fmt;
 
@@ -25,7 +25,7 @@ pub struct Game {
     pub my: Player,
     pub other: Player,
     pub table_card: Card,
-    pub color: Color,
+    pub colour: Colour,
     pub in_progress: bool,
 }
 
@@ -36,22 +36,22 @@ impl Game {
     }
 
     pub fn goal(&self) -> u8 {
-        match self.color {
-            Color::Blue => 22,
-            Color::Red => 2,
+        match self.colour {
+            Colour::Blue => 22,
+            Colour::Red => 2,
         }
     }
 
     pub fn get_red_blue(&self) -> (&Player, &Player) {
-        match self.color {
-            Color::Red => (&self.my, &self.other),
-            Color::Blue => (&self.other, &self.my),
+        match self.colour {
+            Colour::Red => (&self.my, &self.other),
+            Colour::Blue => (&self.other, &self.my),
         }
     }
 
     pub fn from_cards(mut cards: Vec<Card>) -> Game {
         let table_card = cards.pop().unwrap();
-        let color = table_card.get_color();
+        let colour = table_card.get_colour();
         let red = Player {
             cards: [cards.pop().unwrap(), cards.pop().unwrap()],
             pieces: board!(
@@ -74,15 +74,15 @@ impl Game {
             ),
             king: 2,
         };
-        let (my, other) = match color {
-            Color::Red => (red, blue),
-            Color::Blue => (blue, red),
+        let (my, other) = match colour {
+            Colour::Red => (red, blue),
+            Colour::Blue => (blue, red),
         };
         Game {
             my,
             other,
             table_card,
-            color,
+            colour,
             in_progress: true,
         }
     }
@@ -115,14 +115,14 @@ impl Game {
             my: other,
             other: my,
             table_card,
-            color: self.color.next(),
+            colour: self.colour.next(),
             in_progress,
         }
     }
 
     pub fn gen_moves(&self) -> ArrayVec<[Move; 40]> {
-        let left = self.my.cards[0].get_move(self.color);
-        let right = self.my.cards[1].get_move(self.color);
+        let left = self.my.cards[0].get_move(self.colour);
+        let right = self.my.cards[1].get_move(self.colour);
         let mut moves = ArrayVec::new();
         // for every one of my pieces, try each card
         for from_pos in BitIter(self.my.pieces) {
@@ -161,8 +161,8 @@ impl Game {
     }
 
     pub fn count_moves(&self) -> usize {
-        let left = self.my.cards[0].get_move(self.color);
-        let right = self.my.cards[1].get_move(self.color);
+        let left = self.my.cards[0].get_move(self.colour);
+        let right = self.my.cards[1].get_move(self.colour);
         let mut total = 0;
 
         // for every one of my pieces, try each card
@@ -184,14 +184,14 @@ impl fmt::Display for Game {
         let mut output = String::new();
         // colour to move
         if self.in_progress {
-            match self.color {
-                Color::Red => output.push_str("Red to move\n"),
-                Color::Blue => output.push_str("Blue to move\n"),
+            match self.colour {
+                Colour::Red => output.push_str("Red to move\n"),
+                Colour::Blue => output.push_str("Blue to move\n"),
             };
         } else {
-            match self.color {
-                Color::Red => output.push_str("Blue won\n"),
-                Color::Blue => output.push_str("Red won\n"),
+            match self.colour {
+                Colour::Red => output.push_str("Blue won\n"),
+                Colour::Blue => output.push_str("Red won\n"),
             };
         }
         let (red, blue) = self.get_red_blue();
@@ -257,7 +257,7 @@ impl Game {
             };
         }
 
-        let color = Color::from(state_msg.current_turn).unwrap();
+        let colour = Colour::from(state_msg.current_turn).unwrap();
         let red_cards = [
             Card::from_text(&state_msg.cards.red[0]).unwrap(),
             Card::from_text(&state_msg.cards.red[1]).unwrap(),
@@ -279,15 +279,15 @@ impl Game {
             pieces: blue,
             king: blue_king,
         };
-        let (my, other) = match color {
-            Color::Red => (red, blue),
-            Color::Blue => (blue, red),
+        let (my, other) = match colour {
+            Colour::Red => (red, blue),
+            Colour::Blue => (blue, red),
         };
         Game {
             my,
             other,
             table_card,
-            color,
+            colour,
             in_progress,
         }
     }

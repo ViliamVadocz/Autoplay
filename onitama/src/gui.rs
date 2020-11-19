@@ -29,10 +29,10 @@ const CARD_PAD: u32 = BLOCK;
 const CARD_SQUARE: u32 = BLOCK / 2;
 
 // colour
-const BG_COLOR: Color = Color::RGB(20, 20, 20);
-const W_SQUARE_COLOR: Color = Color::RGB(239, 218, 182);
-const B_SQUARE_COLOR: Color = Color::RGB(179, 137, 101);
-const SELECT_COLOR: Color = Color::RGB(90, 150, 60);
+const BG_COLOUR: Color = Color::RGB(20, 20, 20);
+const W_SQUARE_COLOUR: Color = Color::RGB(239, 218, 182);
+const B_SQUARE_COLOUR: Color = Color::RGB(179, 137, 101);
+const SELECT_COLOUR: Color = Color::RGB(90, 150, 60);
 
 macro_rules! rect {
     ($x:expr, $y:expr, $width:expr, $height:expr) => {
@@ -67,10 +67,10 @@ pub fn run(
     let blue_king = texture_creator.load_texture("./images/blue_king.png")?;
     // load temple and colour it (original image is white)
     let mut temple = texture_creator.load_texture("./images/temple.png")?;
-    temple.set_color_mod(W_SQUARE_COLOR.r, W_SQUARE_COLOR.g, W_SQUARE_COLOR.b);
+    temple.set_color_mod(W_SQUARE_COLOUR.r, W_SQUARE_COLOUR.g, W_SQUARE_COLOUR.b);
     // load highlight and colour it (original image is white)
     let mut highlight = texture_creator.load_texture("./images/highlight.png")?;
-    highlight.set_color_mod(SELECT_COLOR.r, SELECT_COLOR.g, SELECT_COLOR.b);
+    highlight.set_color_mod(SELECT_COLOUR.r, SELECT_COLOUR.g, SELECT_COLOUR.b);
     // load font
     let font = ttf_context.load_font("./fonts/maturasc.ttf", 20)?;
 
@@ -134,7 +134,7 @@ pub fn run(
         }
 
         // clear everything
-        canvas.set_draw_color(BG_COLOR);
+        canvas.set_draw_color(BG_COLOUR);
         canvas.clear();
 
         // draw chequerboard
@@ -149,11 +149,11 @@ pub fn run(
                     let square = rect!(x, y, BOARD_SQUARE, BOARD_SQUARE);
                     canvas.set_draw_color(
                         if clicked_square.is_some() && clicked_square.unwrap() == pos as u32 {
-                            SELECT_COLOR
+                            SELECT_COLOUR
                         } else if pos % 2 == 0 {
-                            B_SQUARE_COLOR
+                            B_SQUARE_COLOUR
                         } else {
-                            W_SQUARE_COLOR
+                            W_SQUARE_COLOUR
                         },
                     );
                     canvas.fill_rect(square)?;
@@ -188,11 +188,11 @@ pub fn run(
                     let square = rect!(x, y, BOARD_SQUARE, BOARD_SQUARE);
                     canvas.set_draw_color(
                         if clicked_square.is_some() && clicked_square.unwrap() == pos {
-                            SELECT_COLOR
+                            SELECT_COLOUR
                         } else if pos % 2 == 0 {
-                            B_SQUARE_COLOR
+                            B_SQUARE_COLOUR
                         } else {
-                            W_SQUARE_COLOR
+                            W_SQUARE_COLOUR
                         },
                     );
                     canvas.fill_rect(square)?;
