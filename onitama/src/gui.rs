@@ -16,7 +16,7 @@ use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::{TextureQuery, WindowCanvas};
 
-use bitwise::TestBit;
+use bitwise::{TestBit, SetBit};
 
 // sizes
 const BLOCK: u32 = 64;
@@ -68,6 +68,9 @@ pub fn run(
     // load temple and colour it (original image is white)
     let mut temple = texture_creator.load_texture("./images/temple.png")?;
     temple.set_color_mod(W_SQUARE_COLOR.r, W_SQUARE_COLOR.g, W_SQUARE_COLOR.b);
+    // load highlight and colour it (original image is white)
+    let mut highlight = texture_creator.load_texture("./images/highlight.png")?;
+    highlight.set_color_mod(SELECT_COLOR.r, SELECT_COLOR.g, SELECT_COLOR.b);
     // load font
     let font = ttf_context.load_font("./fonts/maturasc.ttf", 20)?;
 
@@ -75,18 +78,18 @@ pub fn run(
     // let texture = texture_creator.create_texture_from_surface(&surface)?;
     // let TextureQuery { width, height, .. } = texture.query();
 
-    // canvas.fill_rect(rect)?;
-    // canvas.set_draw_color(Color::BLACK);
-    // canvas.draw_rect(rect)?;
-
     let mut event_pump = sdl_context.event_pump()?;
-    let mut clicked_square = None;
+    
     let mut game = None;
     let mut want_move = false;
+    let mut highlighted_squares = 0u32;
     'main_loop: loop {
+        // early exit
         if should_end.load(Ordering::Relaxed) {
             break;
         }
+
+        let mut clicked_square = None;
 
         // event loop
         for event in event_pump.poll_iter() {
@@ -105,8 +108,18 @@ pub fn run(
                     ..
                 } => {
                     clicked_square = get_pos_from_click(x as u32, y as u32);
-                }
-                // TODO right click to highlight
+                },
+                Event::MouseButtonDown {
+                    mouse_btn: MouseButton::Right,
+                    x,
+                    y,
+                    ..
+                } => {
+                    match get_pos_from_click(x as u32, y as u32) {
+                        Some(pos) => highlighted_squares ^= 1 << pos,
+                        None => {},
+                    }
+                },
                 // TODO F to flip view
                 _ => {}
             }
@@ -160,6 +173,9 @@ pub fn run(
                     } else if pos == 2 || pos == 22 {
                         canvas.copy(&temple, None, Some(square))?;
                     }
+                    if highlighted_squares.test_bit(pos) {
+                        canvas.copy(&highlight, None, Some(square))?;
+                    }
                 }
             }
             None => {
@@ -182,6 +198,9 @@ pub fn run(
                     canvas.fill_rect(square)?;
                     if pos == 2 || pos == 22 {
                         canvas.copy(&temple, None, Some(square))?;
+                    }
+                    if highlighted_squares.test_bit(pos) {
+                        canvas.copy(&highlight, None, Some(square))?;
                     }
                 }
             }

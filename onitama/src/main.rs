@@ -40,10 +40,10 @@ fn main() {
     match run() {
         Ok(_) => {}
         Err(err) => {
-            println!("{}", HELP);
             if !err.is_empty() {
-                println!("\n{}", err);
+                println!("Err: {}\n", err);
             }
+            println!("{}", HELP);
         }
     }
 }
