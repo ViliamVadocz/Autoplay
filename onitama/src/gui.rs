@@ -1,4 +1,4 @@
-use crate::cards::Card;
+use crate::colour::Colour;
 use crate::game::Move;
 use crate::Transmission;
 
@@ -14,9 +14,9 @@ use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
-use sdl2::render::{TextureQuery, WindowCanvas};
+use sdl2::render::{Texture, TextureQuery, WindowCanvas};
 
-use bitwise::{TestBit, SetBit};
+use bitwise::TestBit;
 
 // sizes
 const BLOCK: u32 = 64;
@@ -27,6 +27,7 @@ const BOARD_SQUARE: u32 = 2 * BLOCK;
 const BOARD_SIZE: u32 = 5 * BOARD_SQUARE;
 const CARD_PAD: u32 = BLOCK;
 const CARD_SQUARE: u32 = BLOCK / 2;
+const CARD_SIZE: u32 = 5 * CARD_SQUARE;
 
 // colour
 const BG_COLOUR: Color = Color::RGB(20, 20, 20);
@@ -37,6 +38,12 @@ const SELECT_COLOUR: Color = Color::RGB(90, 150, 60);
 macro_rules! rect {
     ($x:expr, $y:expr, $width:expr, $height:expr) => {
         Rect::new($x as i32, $y as i32, $width as u32, $height as u32)
+    };
+}
+
+macro_rules! square {
+    ($x:expr, $y:expr, $side:expr) => {
+        rect!($x, $y, $side, $side)
     };
 }
 
@@ -79,7 +86,7 @@ pub fn run(
     // let TextureQuery { width, height, .. } = texture.query();
 
     let mut event_pump = sdl_context.event_pump()?;
-    
+
     let mut game = None;
     let mut want_move = false;
     let mut highlighted_squares = 0u32;
@@ -108,18 +115,17 @@ pub fn run(
                     ..
                 } => {
                     clicked_square = get_pos_from_click(x as u32, y as u32);
-                },
+                }
                 Event::MouseButtonDown {
                     mouse_btn: MouseButton::Right,
                     x,
                     y,
                     ..
                 } => {
-                    match get_pos_from_click(x as u32, y as u32) {
-                        Some(pos) => highlighted_squares ^= 1 << pos,
-                        None => {},
+                    if let Some(pos) = get_pos_from_click(x as u32, y as u32) {
+                        highlighted_squares ^= 1 << pos;
                     }
-                },
+                }
                 // TODO F to flip view
                 _ => {}
             }
@@ -146,7 +152,7 @@ pub fn run(
                     let col = pos as u32 % 5;
                     let x = BOARD_PAD + BOARD_SQUARE * col;
                     let y = BOARD_PAD + BOARD_SQUARE * row;
-                    let square = rect!(x, y, BOARD_SQUARE, BOARD_SQUARE);
+                    let square = square!(x, y, BOARD_SQUARE);
                     canvas.set_draw_color(
                         if clicked_square.is_some() && clicked_square.unwrap() == pos as u32 {
                             SELECT_COLOUR
@@ -185,7 +191,7 @@ pub fn run(
                     let col = pos % 5;
                     let x = BOARD_PAD + BOARD_SQUARE * col;
                     let y = BOARD_PAD + BOARD_SQUARE * row;
-                    let square = rect!(x, y, BOARD_SQUARE, BOARD_SQUARE);
+                    let square = square!(x, y, BOARD_SQUARE);
                     canvas.set_draw_color(
                         if clicked_square.is_some() && clicked_square.unwrap() == pos {
                             SELECT_COLOUR
@@ -206,7 +212,74 @@ pub fn run(
             }
         }
 
-        // TODO cards
+        // draw cards
+        if let Some(ref actual_game) = game {
+            let (red, blue) = actual_game.get_red_blue();
+            for (card, colour, start_x, start_y) in vec![
+                (
+                    &red.cards[0],
+                    Colour::Red,
+                    BOARD_PAD + BOARD_SIZE + CARD_PAD,
+                    WIN_HEIGHT - CARD_PAD - CARD_SIZE,
+                ),
+                (
+                    &red.cards[1],
+                    Colour::Red,
+                    WIN_WIDTH - CARD_PAD - CARD_SIZE,
+                    WIN_HEIGHT - CARD_PAD - CARD_SIZE,
+                ),
+                (
+                    &blue.cards[0],
+                    Colour::Blue,
+                    BOARD_PAD + BOARD_SIZE + CARD_PAD,
+                    CARD_PAD,
+                ),
+                (
+                    &blue.cards[1],
+                    Colour::Blue,
+                    WIN_WIDTH - CARD_PAD - CARD_SIZE,
+                    CARD_PAD,
+                ),
+                (
+                    &actual_game.table_card,
+                    actual_game.colour,
+                    WIN_WIDTH - CARD_PAD - CARD_SIZE,
+                    (WIN_HEIGHT - CARD_SIZE) / 2,
+                ),
+            ]
+            .into_iter()
+            {
+                let board = card.get_move(colour);
+                let name = card.get_name();
+                // TODO name
+                for pos in 0..25 {
+                    let row = pos / 5;
+                    let col = pos % 5;
+                    let x = start_x + CARD_SQUARE * col;
+                    let y = start_y + CARD_SQUARE * row;
+                    let square = square!(x, y, CARD_SQUARE);
+                    canvas.set_draw_color(if board.test_bit(pos) {
+                        SELECT_COLOUR
+                    } else if pos % 2 == 0 {
+                        B_SQUARE_COLOUR
+                    } else {
+                        W_SQUARE_COLOUR
+                    });
+                    canvas.fill_rect(square)?;
+                    if pos == 2 || pos == 22 {
+                        canvas.copy(&temple, None, Some(square))?;
+                    }
+                    if pos == 12 {
+                        let pawn = match colour {
+                            Colour::Red => &red_pawn,
+                            Colour::Blue => &blue_pawn,
+                        };
+                        canvas.copy(pawn, None, Some(square))?;
+                    }
+                }
+            }
+        }
+
         // TODO usernames
 
         canvas.present();

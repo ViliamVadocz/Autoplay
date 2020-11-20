@@ -56,7 +56,7 @@ use std::thread;
 use crate::bot::get_move;
 use crate::cli::Args;
 use crate::cli::{GameHost, Playing};
-use crate::colour::Colour as GameColour;
+use crate::colour::Colour;
 use crate::connection::{Connection, Participant};
 use crate::game::{Game, Move};
 
@@ -129,7 +129,7 @@ fn run_game(
     let (playing, host) = args;
     match host {
         GameHost::Local(mut game) => {
-            let my_colour = GameColour::Red; // TODO pick randomly
+            let my_colour = Colour::Red; // TODO pick randomly
             while game.in_progress {
                 display(&game)?;
                 let the_move = if my_colour == game.colour {
@@ -171,9 +171,9 @@ fn run_game(
 
             let mut state_msg = conn.spectate(&match_id);
             let colour = if p.index == state_msg.indices.red {
-                GameColour::Red
+                Colour::Red
             } else {
-                GameColour::Blue
+                Colour::Blue
             };
             let mut game = Game::from_state_msg(state_msg);
             while game.in_progress {
