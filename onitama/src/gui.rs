@@ -32,6 +32,8 @@ const CARD_SIZE: u32 = 5 * CARD_SQUARE;
 
 // colour
 const BG_COLOUR: Color = Color::RGB(20, 20, 20);
+const CARD_BG_COLOUR: Color = Color::RGB(45, 45, 45);
+const FONT_COLOUR: Color = Color::RGB(180, 180, 180);
 const W_SQUARE_COLOUR: Color = Color::RGB(239, 218, 182);
 const B_SQUARE_COLOUR: Color = Color::RGB(179, 137, 101);
 const SELECT_COLOUR: Color = Color::RGB(90, 150, 60);
@@ -146,7 +148,7 @@ pub fn run(
                     // create username textures
                     let surface = font
                         .render(&red)
-                        .blended(Color::WHITE)
+                        .blended(FONT_COLOUR)
                         .map_err(|e| e.to_string())?;
                     let texture = texture_creator
                         .create_texture_from_surface(&surface)
@@ -154,7 +156,7 @@ pub fn run(
                     red_username = Some(texture);
                     let surface = font
                         .render(&blue)
-                        .blended(Color::WHITE)
+                        .blended(FONT_COLOUR)
                         .map_err(|e| e.to_string())?;
                     let texture = texture_creator
                         .create_texture_from_surface(&surface)
@@ -292,15 +294,12 @@ pub fn run(
                     let p = if flipped { 24 - pos } else { pos };
                     canvas.set_draw_color(if board.test_bit(p) {
                         SELECT_COLOUR
-                    } else if pos % 2 == 0 {
-                        B_SQUARE_COLOUR
                     } else {
-                        W_SQUARE_COLOUR
+                        CARD_BG_COLOUR
                     });
                     canvas.fill_rect(square)?;
-                    if pos == 2 || pos == 22 {
-                        canvas.copy(&temple, None, Some(square))?;
-                    }
+                    canvas.set_draw_color(FONT_COLOUR);
+                    canvas.draw_rect(square)?;
                     if pos == 12 {
                         let pawn = match colour {
                             Colour::Red => &red_pawn,
@@ -312,7 +311,7 @@ pub fn run(
 
                 let surface = font
                     .render(card.get_name())
-                    .blended(Color::WHITE)
+                    .blended(FONT_COLOUR)
                     .map_err(|e| e.to_string())?;
                 let name = texture_creator
                     .create_texture_from_surface(&surface)
