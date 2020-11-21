@@ -38,14 +38,19 @@ pub struct JoinMsg {
 #[serde(rename_all = "camelCase")]
 pub struct StateMsg {
     pub usernames: UsernamesObj,
+    #[serde(default)]
     pub indices: IndicesObj,
     pub match_id: String,
+    #[serde(default)]
     pub current_turn: String,
+    #[serde(default)]
     pub cards: CardsObj,
     // pub starting_cards: CardsObj,
     // pub moves: Vec<String>,
+    #[serde(default)]
     pub board: String,
     pub game_state: String,
+    #[serde(default)]
     pub winner: String,
 }
 
@@ -56,14 +61,14 @@ pub struct UsernamesObj {
     pub blue: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct IndicesObj {
     pub red: u8,
     pub blue: u8,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct CardsObj {
     pub red: [String; 2],
@@ -88,7 +93,7 @@ pub struct SpectateMsg {
 pub struct ErrorMsg {
     pub match_id: String,
     pub error: String,
-    pub command: String,
+    pub query: String,
 }
 
 pub fn is_in_progress(game_state: String) -> Result<bool, String> {
@@ -135,5 +140,5 @@ pub fn move_to_command(my_move: &Move, match_id: &str, token: &str, game: &Game)
     } else {
         &game.my.cards[1]
     };
-    format!("move {} {} {} {}", match_id, token, pos, card.get_name())
+    format!("move {} {} {} {}", match_id, token, card.get_name(), pos)
 }

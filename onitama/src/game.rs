@@ -237,21 +237,24 @@ impl Game {
         let mut red_king = 0;
         let mut blue_king = 0;
         for (i, character) in (0..25).zip(state_msg.board.chars()) {
+            let row = i / 5;
+            let col = 4 - i % 5;
+            let pos = 5 * row + col;
             match character {
                 '0' => {}
                 '1' => {
-                    blue = blue.set_bit(i);
+                    blue = blue.set_bit(pos);
                 }
                 '2' => {
-                    blue = blue.set_bit(i);
-                    blue_king = i;
+                    blue = blue.set_bit(pos);
+                    blue_king = pos;
                 }
                 '3' => {
-                    red = red.set_bit(i);
+                    red = red.set_bit(pos);
                 }
                 '4' => {
-                    red = red.set_bit(i);
-                    red_king = i;
+                    red = red.set_bit(pos);
+                    red_king = pos;
                 }
                 _ => {}
             };

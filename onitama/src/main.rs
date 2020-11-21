@@ -116,6 +116,7 @@ fn run_game(
 ) -> Result<(), String> {
     // helper closures
     let display = |game: &Game| {
+        // println!("{}", game);
         tx_game
             .send(Transmission::Display(game.clone()))
             .map_err(|e| e.to_string())

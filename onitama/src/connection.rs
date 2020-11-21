@@ -38,6 +38,7 @@ impl Connection {
     }
 
     fn send(&mut self, text: &str) -> WebSocketResult<()> {
+        // println!("-> {}", text);
         self.client.send_message(&Message::text(text))
     }
 
@@ -46,7 +47,7 @@ impl Connection {
             match self.client.recv_message()? {
                 // if it's a parse error then the server protocol has probably changed and retrying won't help
                 OwnedMessage::Text(text) => {
-                    println!("{}", &text);
+                    // println!("<- {}", text);
                     break serde_json::from_str::<LitamaMessage>(&text).unwrap();
                 }
                 OwnedMessage::Binary(bytes) => {
@@ -102,7 +103,12 @@ impl Connection {
         }
         // confirm spectate
         recv_loop!(self, Ok(LitamaMessage::Spectate(_)) => ());
-        self.recv_state()
+        loop {
+            let state_msg = self.recv_state();
+            if state_msg.game_state != "waiting for player" {
+                break state_msg;
+            }
+        }
     }
 
     pub fn recv_state(&mut self) -> StateMsg {
