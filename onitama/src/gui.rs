@@ -19,6 +19,7 @@ use sdl2::render::{Texture, TextureQuery, WindowCanvas};
 use bitwise::TestBit;
 
 // sizes
+const FONT_SIZE: u16 = 28;
 const BLOCK: u32 = 64;
 const WIN_WIDTH: u32 = 19 * BLOCK;
 const WIN_HEIGHT: u32 = 12 * BLOCK;
@@ -79,17 +80,16 @@ pub fn run(
     let mut highlight = texture_creator.load_texture("./images/highlight.png")?;
     highlight.set_color_mod(SELECT_COLOUR.r, SELECT_COLOUR.g, SELECT_COLOUR.b);
     // load font
-    let font = ttf_context.load_font("./fonts/maturasc.ttf", 20)?;
-
-    // let surface = font.render(card.get_name()).blended(Color::RED)?;
-    // let texture = texture_creator.create_texture_from_surface(&surface)?;
-    // let TextureQuery { width, height, .. } = texture.query();
+    let font = ttf_context.load_font("./fonts/Typographica-Blp5.ttf", FONT_SIZE)?;
 
     let mut event_pump = sdl_context.event_pump()?;
 
     let mut game = None;
     let mut want_move = false;
     let mut highlighted_squares = 0u32;
+    let mut flipped = false;
+    let mut red_username = None;
+    let mut blue_username = None;
     'main_loop: loop {
         // early exit
         if should_end.load(Ordering::Relaxed) {
@@ -126,7 +126,13 @@ pub fn run(
                         highlighted_squares ^= 1 << pos;
                     }
                 }
-                // TODO F to flip view
+                Event::KeyDown {
+                    keycode: Some(Keycode::F),
+                    ..
+                } => {
+                    flipped = !flipped;
+                    highlighted_squares = highlighted_squares.reverse_bits() >> (32 - 25);
+                }
                 _ => {}
             }
         }
@@ -136,6 +142,25 @@ pub fn run(
             match trans {
                 Transmission::Display(g) => game = Some(g),
                 Transmission::RequestMove => want_move = true,
+                Transmission::Usernames(red, blue) => {
+                    // create username textures
+                    let surface = font
+                        .render(&red)
+                        .blended(Color::WHITE)
+                        .map_err(|e| e.to_string())?;
+                    let texture = texture_creator
+                        .create_texture_from_surface(&surface)
+                        .map_err(|e| e.to_string())?;
+                    red_username = Some(texture);
+                    let surface = font
+                        .render(&blue)
+                        .blended(Color::WHITE)
+                        .map_err(|e| e.to_string())?;
+                    let texture = texture_creator
+                        .create_texture_from_surface(&surface)
+                        .map_err(|e| e.to_string())?;
+                    blue_username = Some(texture);
+                }
             }
         }
 
@@ -147,7 +172,7 @@ pub fn run(
         match game {
             Some(ref actual_game) => {
                 let (red, blue) = actual_game.get_red_blue();
-                for pos in 0..25u8 {
+                for mut pos in 0..25u8 {
                     let row = pos as u32 / 5;
                     let col = pos as u32 % 5;
                     let x = BOARD_PAD + BOARD_SQUARE * col;
@@ -164,21 +189,23 @@ pub fn run(
                     );
                     canvas.fill_rect(square)?;
                     // add image (such as pieces or temple)
-                    if red.pieces.test_bit(pos) {
-                        if red.king == pos {
+                    let p = if flipped { 24 - pos } else { pos };
+                    if red.pieces.test_bit(p) {
+                        if red.king == p {
                             canvas.copy(&red_king, None, Some(square))?;
                         } else {
                             canvas.copy(&red_pawn, None, Some(square))?;
                         }
-                    } else if blue.pieces.test_bit(pos) {
-                        if blue.king == pos {
+                    } else if blue.pieces.test_bit(p) {
+                        if blue.king == p {
                             canvas.copy(&blue_king, None, Some(square))?;
                         } else {
                             canvas.copy(&blue_pawn, None, Some(square))?;
                         }
-                    } else if pos == 2 || pos == 22 {
+                    } else if p == 2 || p == 22 {
                         canvas.copy(&temple, None, Some(square))?;
                     }
+                    // add highlight
                     if highlighted_squares.test_bit(pos) {
                         canvas.copy(&highlight, None, Some(square))?;
                     }
@@ -215,50 +242,55 @@ pub fn run(
         // draw cards
         if let Some(ref actual_game) = game {
             let (red, blue) = actual_game.get_red_blue();
-            for (card, colour, start_x, start_y) in vec![
+            let (bottom, top) = if flipped { (blue, red) } else { (red, blue) };
+            for (card, colour, start_x, start_y, text_flipped) in vec![
                 (
-                    &red.cards[0],
-                    Colour::Red,
+                    &bottom.cards[0],
+                    if flipped { Colour::Blue } else { Colour::Red },
                     BOARD_PAD + BOARD_SIZE + CARD_PAD,
                     WIN_HEIGHT - CARD_PAD - CARD_SIZE,
+                    false,
                 ),
                 (
-                    &red.cards[1],
-                    Colour::Red,
+                    &bottom.cards[1],
+                    if flipped { Colour::Blue } else { Colour::Red },
                     WIN_WIDTH - CARD_PAD - CARD_SIZE,
                     WIN_HEIGHT - CARD_PAD - CARD_SIZE,
+                    false,
                 ),
                 (
-                    &blue.cards[0],
-                    Colour::Blue,
+                    &top.cards[0],
+                    if flipped { Colour::Red } else { Colour::Blue },
                     BOARD_PAD + BOARD_SIZE + CARD_PAD,
                     CARD_PAD,
+                    true,
                 ),
                 (
-                    &blue.cards[1],
-                    Colour::Blue,
+                    &top.cards[1],
+                    if flipped { Colour::Red } else { Colour::Blue },
                     WIN_WIDTH - CARD_PAD - CARD_SIZE,
                     CARD_PAD,
+                    true,
                 ),
                 (
                     &actual_game.table_card,
                     actual_game.colour,
                     WIN_WIDTH - CARD_PAD - CARD_SIZE,
                     (WIN_HEIGHT - CARD_SIZE) / 2,
+                    matches!(actual_game.colour, Colour::Blue) ^ flipped,
                 ),
             ]
             .into_iter()
             {
                 let board = card.get_move(colour);
-                let name = card.get_name();
-                // TODO name
                 for pos in 0..25 {
                     let row = pos / 5;
                     let col = pos % 5;
                     let x = start_x + CARD_SQUARE * col;
                     let y = start_y + CARD_SQUARE * row;
                     let square = square!(x, y, CARD_SQUARE);
-                    canvas.set_draw_color(if board.test_bit(pos) {
+                    let p = if flipped { 24 - pos } else { pos };
+                    canvas.set_draw_color(if board.test_bit(p) {
                         SELECT_COLOUR
                     } else if pos % 2 == 0 {
                         B_SQUARE_COLOUR
@@ -277,10 +309,46 @@ pub fn run(
                         canvas.copy(pawn, None, Some(square))?;
                     }
                 }
+
+                let surface = font
+                    .render(card.get_name())
+                    .blended(Color::WHITE)
+                    .map_err(|e| e.to_string())?;
+                let name = texture_creator
+                    .create_texture_from_surface(&surface)
+                    .map_err(|e| e.to_string())?;
+                let TextureQuery { width, height, .. } = name.query();
+                let y = if text_flipped {
+                    start_y + CARD_SIZE
+                } else {
+                    start_y - height
+                };
+                let text_rect = rect!(start_x, y, width, height);
+                canvas.copy(&name, None, Some(text_rect))?;
             }
         }
 
-        // TODO usernames
+        // write usernames
+        if let Some(ref red) = red_username {
+            let TextureQuery { width, height, .. } = red.query();
+            let y = if flipped {
+                BOARD_PAD - height
+            } else {
+                WIN_HEIGHT - BOARD_PAD
+            };
+            let text_rect = rect!(BOARD_PAD, y, width, height);
+            canvas.copy(red, None, Some(text_rect))?;
+        }
+        if let Some(ref blue) = blue_username {
+            let TextureQuery { width, height, .. } = blue.query();
+            let y = if flipped {
+                WIN_HEIGHT - BOARD_PAD
+            } else {
+                BOARD_PAD - height
+            };
+            let text_rect = rect!(BOARD_PAD, y, width, height);
+            canvas.copy(blue, None, Some(text_rect))?;
+        }
 
         canvas.present();
         std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));

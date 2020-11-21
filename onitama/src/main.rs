@@ -62,6 +62,7 @@ use crate::game::{Game, Move};
 
 pub enum Transmission {
     Display(Game),
+    Usernames(String, String),
     RequestMove,
 }
 
@@ -125,12 +126,20 @@ fn run_game(
             .map_err(|e| e.to_string())?;
         rx_game.recv().map_err(|e| e.to_string())
     };
+    let send_usernames = |red: &str, blue: &str| {
+        tx_game
+            .send(Transmission::Usernames(red.to_string(), blue.to_string()))
+            .map_err(|e| e.to_string())
+    };
 
     let (playing, host) = args;
     match host {
         GameHost::Local(mut game) => {
-            let my_colour = Colour::Red; // TODO pick randomly
+            let my_colour = Colour::Red; // TODO pick randomly?
             while game.in_progress {
+                if should_end.load(Ordering::Relaxed) {
+                    break;
+                }
                 display(&game)?;
                 let the_move = if my_colour == game.colour {
                     // my turn
@@ -147,6 +156,7 @@ fn run_game(
             }
             display(&game)?;
         }
+
         GameHost::Online(maybe_match_id, username) => {
             let mut conn = Connection::new(SERVER)?;
 
@@ -175,6 +185,7 @@ fn run_game(
             } else {
                 Colour::Blue
             };
+            send_usernames(&state_msg.usernames.red, &state_msg.usernames.blue)?;
             let mut game = Game::from_state_msg(state_msg);
             while game.in_progress {
                 if should_end.load(Ordering::Relaxed) {
