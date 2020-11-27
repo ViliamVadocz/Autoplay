@@ -125,7 +125,14 @@ fn run_game(
         tx_game
             .send(Transmission::RequestMove)
             .map_err(|e| e.to_string())?;
-        rx_game.recv().map_err(|e| e.to_string())
+
+        loop {
+            if let Ok(the_move) = rx_game.try_recv() {
+                break Ok(the_move);
+            } else if should_end.load(Ordering::Relaxed) {
+                break Err("GUI closed".to_string());
+            }
+        }
     };
     let send_usernames = |red: &str, blue: &str| {
         tx_game
