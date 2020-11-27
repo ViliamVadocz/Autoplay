@@ -6,7 +6,7 @@ use crate::colour::Colour;
 use crate::messages::*;
 use std::fmt;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Move {
     pub from: u8,
     pub to: u8,

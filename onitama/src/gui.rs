@@ -1,12 +1,15 @@
 use crate::colour::Colour;
-use crate::game::Move;
+use crate::game::{Game, Move};
 use crate::Transmission;
 
+use std::convert::TryFrom;
 use std::result::Result;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
+
+use arrayvec::ArrayVec;
 
 use sdl2::event::Event;
 use sdl2::image::LoadTexture;
@@ -14,9 +17,9 @@ use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
-use sdl2::render::{Texture, TextureQuery, WindowCanvas};
+use sdl2::render::TextureQuery;
 
-use bitwise::TestBit;
+use bitwise::{SetBit, TestBit};
 
 // sizes
 const FONT_SIZE: u16 = 28;
@@ -86,19 +89,22 @@ pub fn run(
 
     let mut event_pump = sdl_context.event_pump()?;
 
-    let mut game = None;
+    // setup before loop
+    let mut game: Option<Game> = None;
     let mut want_move = false;
-    let mut highlighted_squares = 0u32;
+    let mut from = None;
+    let mut possible_moves: ArrayVec<[Move; 40]> = ArrayVec::new();
     let mut flipped = false;
     let mut red_username = None;
     let mut blue_username = None;
+    let mut highlighted_squares = 0u32;
+    let mut clicked_square = None;
+
     'main_loop: loop {
         // early exit
         if should_end.load(Ordering::Relaxed) {
             break;
         }
-
-        let mut clicked_square = None;
 
         // event loop
         for event in event_pump.poll_iter() {
@@ -116,7 +122,7 @@ pub fn run(
                     y,
                     ..
                 } => {
-                    clicked_square = get_pos_from_click(x as u32, y as u32);
+                    clicked_square = get_pos_from_mouse(x as u32, y as u32);
                 }
                 Event::MouseButtonDown {
                     mouse_btn: MouseButton::Right,
@@ -124,7 +130,7 @@ pub fn run(
                     y,
                     ..
                 } => {
-                    if let Some(pos) = get_pos_from_click(x as u32, y as u32) {
+                    if let Some(pos) = get_pos_from_mouse(x as u32, y as u32) {
                         highlighted_squares ^= 1 << pos;
                     }
                 }
@@ -139,11 +145,26 @@ pub fn run(
             }
         }
 
-        // see if game can be updated
+        // get hovered square
+        let mut _hovered_square = None;
+        let mouse = event_pump.mouse_state();
+        let mouse_x = u32::try_from(mouse.x());
+        let mouse_y = u32::try_from(mouse.y());
+        if let Ok(x) = mouse_x {
+            if let Ok(y) = mouse_y {
+                _hovered_square = get_pos_from_mouse(x, y);
+            }
+        }
+
         if let Ok(trans) = rx.try_recv() {
             match trans {
                 Transmission::Display(g) => game = Some(g),
-                Transmission::RequestMove => want_move = true,
+                Transmission::RequestMove => {
+                    want_move = true;
+                    if let Some(ref g) = game {
+                        possible_moves = g.gen_moves()
+                    };
+                }
                 Transmission::Usernames(red, blue) => {
                     // create username textures
                     let surface = font
@@ -166,6 +187,54 @@ pub fn run(
             }
         }
 
+        // try to get move
+        if want_move {
+            if let Some(_pos) = clicked_square {
+                let pos = _pos as u8;
+                // clicked on second square
+                if let Some(from_pos) = from {
+                    if pos != from_pos {
+                        let mut chosen_moves: Vec<&Move> = possible_moves
+                            .iter()
+                            .filter(|m| m.from == from_pos && m.to == pos)
+                            .collect();
+                        if !chosen_moves.is_empty() {
+                            // TODO handle choice of cards
+                            tx.send(chosen_moves.pop().unwrap().to_owned())
+                                .map_err(|e| e.to_string())?;
+                            want_move = false;
+                        }
+                        // cancel move because clicked on wrong square
+                        from = None;
+                        clicked_square = None;
+                    }
+                // first pos
+                } else {
+                    // check if clicked on my own piece
+                    if let Some(ref actual_game) = game {
+                        if actual_game.my.pieces.test_bit(pos) {
+                            from = Some(pos);
+                        }
+                    }
+                }
+            }
+
+            // cancel move because clicked off board
+            if from.is_some() && clicked_square.is_none() {
+                from = None;
+            }
+        }
+
+        // map out which squares are available for a move
+        let mut viable_squares: u32 = 0;
+        if let Some(from_pos) = from {
+            for m in possible_moves.iter() {
+                if m.from == from_pos {
+                    viable_squares = viable_squares.set_bit(m.to);
+                }
+            }
+        }
+
         // clear everything
         canvas.set_draw_color(BG_COLOUR);
         canvas.clear();
@@ -174,21 +243,19 @@ pub fn run(
         match game {
             Some(ref actual_game) => {
                 let (red, blue) = actual_game.get_red_blue();
-                for mut pos in 0..25u8 {
+                for pos in 0..25u8 {
                     let row = pos as u32 / 5;
                     let col = pos as u32 % 5;
                     let x = BOARD_PAD + BOARD_SQUARE * col;
                     let y = BOARD_PAD + BOARD_SQUARE * row;
                     let square = square!(x, y, BOARD_SQUARE);
-                    canvas.set_draw_color(
-                        if clicked_square.is_some() && clicked_square.unwrap() == pos as u32 {
-                            SELECT_COLOUR
-                        } else if pos % 2 == 0 {
-                            B_SQUARE_COLOUR
-                        } else {
-                            W_SQUARE_COLOUR
-                        },
-                    );
+                    canvas.set_draw_color(if viable_squares.test_bit(pos) {
+                        SELECT_COLOUR
+                    } else if pos % 2 == 0 {
+                        B_SQUARE_COLOUR
+                    } else {
+                        W_SQUARE_COLOUR
+                    });
                     canvas.fill_rect(square)?;
                     // add image (such as pieces or temple)
                     let p = if flipped { 24 - pos } else { pos };
@@ -356,7 +423,7 @@ pub fn run(
     Ok(())
 }
 
-fn get_pos_from_click(x: u32, y: u32) -> Option<u32> {
+fn get_pos_from_mouse(x: u32, y: u32) -> Option<u32> {
     if (BOARD_PAD <= x && x < BOARD_PAD + BOARD_SIZE)
         && (BOARD_PAD <= y && y < BOARD_PAD + BOARD_SIZE)
     {
